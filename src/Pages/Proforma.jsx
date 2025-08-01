@@ -1,6 +1,8 @@
 import React,{useEffect, useState} from 'react'
 import QuotationModal from '../Components/Proforma/QuotationModal'
-import { fetchData } from '../../utility/api';
+import { deleteData, fetchData } from '../../utility/api';
+import { Nav } from 'react-bootstrap';
+import moment from 'moment';
 
 function Proforma() {
     const [showModal, setShowModal] = useState(false);
@@ -17,6 +19,135 @@ function Proforma() {
     useEffect(()=>{
       readProforma()
     },[])
+
+    const deleteQuotation = async (id)=>{
+      try {
+        const res = await deleteData('quotations',id)
+        if(res.status === 200)
+        {
+          alert(res.data.message)
+          readProforma()
+        }
+        
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+
+const exportQuotation = (quotation) => {
+        // Check if quotation data exists
+        if (!quotation || !quotation.items) {
+            alert('Quotation data is incomplete');
+            return;
+        }
+        // Create a printable version of the quotation
+        const printWindow = window.open('', '_blank');
+
+        // Calculate totals safely
+        const subtotal = quotation.items.reduce((sum, item) => sum + (item.total || 0), 0);
+        const taxAmount = quotation.enableTax ? subtotal * 0.18 : 0;
+        const total = subtotal + taxAmount;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Quotation ${quotation._id || 'N/A'}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .details { margin-bottom: 30px; overflow: hidden; }
+                        .bill-section { width: 45%; display: inline-block; vertical-align: top; }
+                        .bill-section.right { float: right; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f5f5f5; }
+                        .total-section { text-align: right; font-weight: bold; }
+                        .signature { margin-top: 50px; }
+                        @media print {
+                            body { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>QUOTATION</h1>
+                        <p>Quotation #: ${quotation.quotationId || 'N/A'}</p>
+                        <p>Date: ${quotation.quotationDate ? new Date(quotation.quotationDate).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    
+                    <div class="details">
+                        <div class="bill-section">
+                            <h3>From:</h3>
+                            <p><strong>${quotation.billedBy?.name || 'N/A'}</strong></p>
+                            <p>${quotation.billedBy?.address || ''}</p>
+                            <p>Phone: ${quotation.billedBy?.phone || ''}</p>
+                            <p>Email: ${quotation.billedBy?.email || ''}</p>
+                        </div>
+                        <div class="bill-section right">
+                            <h3>To:</h3>
+                            <p><strong>${quotation.billedTo?.name || 'N/A'}</strong></p>
+                            <p>${quotation.billedTo?.address || ''}</p>
+                            <p>Phone: ${quotation.billedTo?.phone || ''}</p>
+                            <p>Email: ${quotation.billedTo?.email || ''}</p>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>VAT</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${quotation.items.map(item => `
+                                <tr>
+                                    <td>${item.service || ''}</td>
+                                    <td>${item.description || ''}</td>
+                                    <td>${item.quantity || 0}</td>
+                                    <td>${(item.unitCost || 0).toFixed(2)} ${quotation.currency || 'USD'}</td>
+                                    <td>${item.vat || 0}%</td>
+                                    <td>${(item.total || 0).toFixed(2)} ${quotation.currency || 'USD'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="total-section">
+                        <p>Subtotal: ${subtotal.toFixed(2)} ${quotation.currency || 'USD'}</p>
+                        ${quotation.enableTax ? `
+                            <p>Tax (18%): ${taxAmount.toFixed(2)} ${quotation.currency || 'USD'}</p>
+                        ` : ''}
+                        <p><strong>Total: ${total.toFixed(2)} ${quotation.currency || 'USD'}</strong></p>
+                    </div>
+                    
+                    ${quotation.notes ? `
+                        <div class="notes">
+                            <h3>Notes:</h3>
+                            <p>${quotation.notes}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="signature">
+                        <p>Authorized Signature</p>
+                        <p>___________________________</p>
+                    </div>
+                    
+                    <script>
+                        setTimeout(() => {
+                            window.print();
+                            window.close();
+                        }, 500);
+                    </script>
+                </body>
+            </html>
+        `);
+    };
 
   return (
     <>
@@ -91,6 +222,7 @@ function Proforma() {
                     <i class="bi bi-plus-circle"></i>
                     New Proforma
                 </button>
+                <QuotationModal/>
             </div>
         </div>
 
@@ -130,6 +262,7 @@ function Proforma() {
                     <tr>
                         <th><input class="form-check-input" type="checkbox" id="select-all"/></th>
                         <th>Proforma ID</th>
+                        <th>Company</th>
                         <th>Client</th>
                         <th>Created On</th>
                         <th>Status</th>
@@ -143,20 +276,56 @@ function Proforma() {
                       return(
                         <tr key={i}>
                           <td><input className="form-check-input row-checkbox" type="checkbox"/></td>
-                          <td>{proforma?._id}</td>
+                          <td>{proforma?.quotationId}</td>
+                          <td>{proforma?.billedBy?.name}</td>
                           <td>{proforma?.billedTo?.name}</td>
-                          <td>{proforma?.quotationDate}</td>
+                          <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
                           <td>
                               <span className="status-badge" style={{backgroundColor: `${statusColor}20`, color: statusColor}}>
                                   <span className="status-dot" style={{backgroundColor: statusColor}}></span>
                                   {proforma?.status}
                               </span>
                           </td>
-                          <td><button className="actions-btn">⋯</button></td>
+                          <td>
+                            <button 
+                              popoverTarget={`export-${i}`} 
+                              id={`exportBtn${proforma?._id}`}
+                              type='button' 
+                              className="actions-btn information">⋯</button>
+                            <div 
+                              className='popoverInfo'
+                              id={`export-${i}`} 
+                              popover='auto' 
+                              anchor={`exportBtn${proforma?._id}`}>
+                                <Nav className="flex-column">
+                                  <Nav.Item onClick={(e) => {
+                                    e.stopPropagation(); // This prevents the event from bubbling up
+                                    exportQuotation(proforma);
+                                  }}>
+                                    <span>Print</span>
+                                  </Nav.Item>
+                                  <Nav.Item>
+                                    <span>Edit</span>
+                                  </Nav.Item>
+                                  <Nav.Item
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // This prevents the event from bubbling up
+                                      deleteQuotation(proforma?._id);
+                                    }}
+                                    >
+                                    <span>Delete</span>
+                                  </Nav.Item>
+                                  
+                                </Nav>
+                                
+                            </div>
+                          </td>
                         </tr>
                       )
                     })
                   }
+
+                  
                 </tbody>
             </table>
         </div>

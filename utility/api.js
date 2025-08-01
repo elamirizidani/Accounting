@@ -71,14 +71,25 @@ export const updateDatas = async (endpoint, data) => {
   return await response.json();
 };
 
-export const deleteData = async (endpoint) => {
-  const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
-  if (!response.ok) throw new Error('Network response was not ok');
-  return await response.json();
-};
+// export const deleteData = async (endpoint) => {
+//   const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+//     method: 'DELETE',
+//     headers: {
+//       'Authorization': `Bearer ${localStorage.getItem('token')}`
+//     }
+//   });
+//   if (!response.ok) throw new Error('Network response was not ok');
+//   return await response.json();
+// };
 
+
+
+export const deleteData = async (endpoint, id) => {
+  try {
+    const response = await api.delete(`${endpoint}/${id}`);
+    return response;
+  } catch (error) {
+    console.error('Error deleting data:', error);
+    throw error;
+  }
+};

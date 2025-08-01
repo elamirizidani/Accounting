@@ -4,6 +4,7 @@ import './create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
+import ClientFormModal from './ClientFormModal';
 
 
 const QuotationModal = ({ show, handleClose }) => {
@@ -116,6 +117,11 @@ const [newClient, setNewClient] = useState({
    const [formData, setFormData] = useState({
     billedBy: '',
     billedTo: '',
+    quotationDate:'',
+    currency:'',
+    status:'',
+    additionalNotes:'',
+    referenceNumber:'',
     enableTax: true,
     items: [{
       service: '',
@@ -136,12 +142,15 @@ const [newClient, setNewClient] = useState({
     const payload = {
       billedBy: selectedCompany?._id,
       billedTo: selectedCustomer?._id,
+      currency:formData.currency,
+      status:formData.status,
+      additionalNotes:formData.additionalNotes,
+      referenceNumber:formData.referenceNumber,
       items: items,
       enableTax,
       roundOffTotal,
       total,
-      quotationDate: new Date().toISOString(), // or get from date input
-      currency: 'USD', // replace with selected value if dynamic
+      quotationDate: formData.quotationDate,
       reference: 'REF-123456', // you can also get this from an input
       notes: '', // can bind to form state if needed
     };
@@ -161,6 +170,8 @@ const [newClient, setNewClient] = useState({
     setLoading(false);
   }
 };
+
+
 
 const handleAddClient = async (e) => {
   if (e) e.preventDefault();  // Prevent default if event exists
@@ -193,97 +204,10 @@ const handleAddClient = async (e) => {
 };
 
 
-const handleKeyDown = (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-  }
-};
-
-
-
-const ClientFormModal = () => (
-  <Modal show={showClientForm} onHide={() => setShowClientForm(false)}>
-    <Modal.Header closeButton>
-      <Modal.Title>Add New Client</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-      <Form onSubmit={handleAddClient}>
-        <Form.Group className="mb-3">
-          <Form.Label>Name</Form.Label>
-          <Form.Control 
-            type="text" 
-            value={newClient.name}
-            onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-            onKeyDown={handleKeyDown}
-            required
-          />
-        </Form.Group>
-        
-        <Form.Group className="mb-3">
-          <Form.Label>Address</Form.Label>
-          <Form.Control 
-            type="text" 
-            value={newClient.address}
-            onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-            onKeyDown={handleKeyDown}
-            required
-          />
-        </Form.Group>
-        
-        <Form.Group className="mb-3">
-          <Form.Label>Phone</Form.Label>
-          <Form.Control 
-            type="text" 
-            value={newClient.phone}
-            onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-            onKeyDown={handleKeyDown}
-            required
-          />
-        </Form.Group>
-        
-        <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
-          <Form.Control 
-            type="email" 
-            value={newClient.email}
-            onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-            onKeyDown={handleKeyDown}
-            required
-          />
-        </Form.Group>
-      </Form>
-    </Modal.Body>
-    <Modal.Footer>
-      <Button variant="secondary" onClick={() => setShowClientForm(false)}>
-        Cancel
-      </Button>
-
-      <Button 
-      variant="primary" 
-      onClick={handleAddClient} 
-      disabled={loading}
-      type="submit"  // Make it a submit button
-    >
-      {loading ? (
-        <>
-          <Spinner animation="border" size="sm" className="me-2" />
-          Creating...
-        </>
-      ) : (
-        'Save Customer'
-      )}
-    </Button>
-
-    </Modal.Footer>
-  </Modal>
-);
-
-
-
 
   return (
     <>
-    <Modal show={show} onHide={handleClose} size="xl" centered>
+    <Modal show={show} onHide={showClientForm ? () => {} : handleClose}  size="xl" centered>
       <div className="quotation-modal">
         <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
@@ -298,19 +222,31 @@ const ClientFormModal = () => (
               <div className="col-md-3">
                 <Form.Group>
                   <Form.Label>Quotation ID</Form.Label>
-                  <Form.Control type="text" value="Q34069" readOnly />
+                  <Form.Control type="text" value="Q34069" readOnly disabled/>
                 </Form.Group>
               </div>
               <div className="col-md-3">
                 <Form.Group>
                   <Form.Label>Reference Number</Form.Label>
-                  <Form.Control type="text" defaultValue="1254569" />
+                  <Form.Control type="text" 
+                    value={formData.referenceNumber}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({...formData, referenceNumber: value});
+                    }}
+                  />
                 </Form.Group>
               </div>
               <div className="col-md-3">
                 <Form.Group>
                   <Form.Label>Select Status</Form.Label>
-                  <Form.Select>
+                  <Form.Select
+                    value={formData.status}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({...formData, status: value});
+                      }}
+                  >
                     <option>Select Status</option>
                     <option value="draft">Draft</option>
                     <option value="pending">Pending</option>
@@ -321,11 +257,17 @@ const ClientFormModal = () => (
               <div className="col-md-3">
                 <Form.Group>
                   <Form.Label>Currency</Form.Label>
-                  <Form.Select>
+                  <Form.Select 
+                  value={formData.currency}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({...formData, currency: value});
+                      }}
+                      >
                     <option>Select Currency</option>
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
-                    <option value="GBP">RWF</option>
+                    <option value="RWF">RWF</option>
                   </Form.Select>
                 </Form.Group>
               </div>
@@ -335,7 +277,14 @@ const ClientFormModal = () => (
                 <Form.Group>
                   <Form.Label>Quotation Date</Form.Label>
                   <div className="d-flex align-items-center">
-                    <Form.Control type="date" />
+                    <Form.Control type="date" 
+                    // new Date().toISOString()
+                    value={formData.quotationDate}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({...formData, quotationDate: value});
+                      }}
+                    />
                     <i className="bi bi-calendar ms-2"></i>
                   </div>
                 </Form.Group>
@@ -445,6 +394,7 @@ const ClientFormModal = () => (
                   >
                     ● Add New
                   </Button>
+                  {/* <SideModel/> */}
 
                   {/* <Button variant="outline-primary" size="sm">● Add New</Button> */}
 
@@ -468,7 +418,7 @@ const ClientFormModal = () => (
 
           {/* Items & Details */}
           <div className="mb-4">
-            <h2 className="h5 mb-3">Items & Details</h2>
+            {/* <h2 className="h5 mb-3">Items & Details</h2>
             <Form.Group className="mb-3">
               <Form.Label>Services</Form.Label>
               <Form.Select>
@@ -476,7 +426,7 @@ const ClientFormModal = () => (
                 <option value="service1">Service 1</option>
                 <option value="service2">Service 2</option>
               </Form.Select>
-            </Form.Group>
+            </Form.Group> */}
             <div className="table-responsive">
               <Table bordered>
                 <thead>
@@ -548,7 +498,13 @@ const ClientFormModal = () => (
               </div>
               <Form.Group>
                 <Form.Label>Additional Notes</Form.Label>
-                <Form.Control as="textarea" rows={3} placeholder="Enter additional notes..." />
+                <Form.Control as="textarea" rows={3} placeholder="Enter additional notes..."
+                  value={formData.additionalNotes}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({...formData, additionalNotes: value});
+                  }}
+                />
               </Form.Group>
             </div>
             <div className="col-md-6">
@@ -643,31 +599,20 @@ const ClientFormModal = () => (
       </Form>
       </div>
     </Modal>
-    <ClientFormModal /></>
+    {/* <ClientFormModal key={Date.now()}/> */}
+    <ClientFormModal
+        show={showClientForm}
+        onHide={() => setShowClientForm(false)}
+        newClient={newClient}
+        setNewClient={setNewClient}
+        handleAddClient={handleAddClient}
+        loading={loading}
+      />
+      </>
   );
-
-
-
   
 };
 
-// Example usage in your App component
-// const App = () => {
-//   const [showModal, setShowModal] = useState(false);
-
-//   return (
-//     <div className="container mt-5">
-//       <Button variant="primary" onClick={() => setShowModal(true)}>
-//         Open Quotation Modal
-//       </Button>
-      
-//       <QuotationModal 
-//         show={showModal} 
-//         handleClose={() => setShowModal(false)} 
-//       />
-//     </div>
-//   );
-// };
 
 export default QuotationModal;
 
