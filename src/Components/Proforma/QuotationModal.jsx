@@ -5,30 +5,72 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from './ClientFormModal';
+import axios from 'axios';
 
 
-const QuotationModal = ({ show, handleClose }) => {
+const QuotationModal = ({ show, handleClose,quotation ={} }) => {
   const [enableTax, setEnableTax] = useState(true);
   const [addDueDate, setAddDueDate] = useState(false);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
-  const [items, setItems] = useState([
-  ]);
-
+  const [items, setItems] = useState(quotation?.items ||[]);
+const currencies = [
+    {
+      name:'USD',
+      key:"USD",
+      symbol:'$',
+      cName:'Dollars'
+    },{
+      name:'EUR',
+      key:"USDEUR",
+      symbol:'€',
+      cName:'Euros'
+    },{
+      name:'RWF',
+      key:"USDRWF",
+      symbol:'RWF',
+      cName:'Rwandan Franc'
+    }
+  ]
 
   const [customers,setCustomers] = useState([])
   const [companies,setCompanies] = useState([])
-  const [selectedCustomer,setSelectedCustomer] = useState({})
-  const [selectedCompany,setSelectedCompany] = useState({})
-
+  const [selectedCustomer,setSelectedCustomer] = useState(quotation?.billedTo||{})
+  const [selectedCompany,setSelectedCompany] = useState(quotation?.billedBy||{})
+  const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === quotation?.currency)||{})
+  const [previousCurrency, setPreviousCurrency] = useState(null);
 
   const [showClientForm, setShowClientForm] = useState(false);
-const [newClient, setNewClient] = useState({
-  name: '',
-  address: '',
-  phone: '',
-  email: ''
-});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [newClient, setNewClient] = useState({
+    name: '',
+    address: '',
+    phone: '',
+    email: ''
+  });
+
+  const [formData, setFormData] = useState(quotation ||{
+    billedBy: '',
+    billedTo: '',
+    quotationDate:'',
+    currency:'',
+    status:'',
+    additionalNotes:'',
+    referenceNumber:'',
+    enableTax: true,
+    items: [{
+      service: '',
+      description: '',
+      quantity: 1,
+      unitCost: 0,
+      vat: 18,
+    }]
+  });
+  // console.log(quotation)
+
   
+
+
       const readCustomers = async ()=>{
         try {
           const res = await fetchData('customers')
@@ -65,35 +107,35 @@ const [newClient, setNewClient] = useState({
       setItems(newItems);
     }
   };
+  
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
-    
-    // Calculate total if quantity or unitCost changes
     if (field === 'quantity' || field === 'unitCost') {
       const quantity = parseFloat(newItems[index].quantity) || 0;
       const unitCost = parseFloat(newItems[index].unitCost) || 0;
       newItems[index].total = quantity * unitCost;
     }
-    
     setItems(newItems);
   };
 
+
+
   const calculateTotals = () => {
     const amount = items.reduce((sum, item) => sum + (item.total || 0), 0);
-    const cgst = enableTax ? amount * 0.09 : 0;
-    const sgst = enableTax ? amount * 0.09 : 0;
-    const total = amount + cgst + sgst;
+    const vat = enableTax ? amount * 0.18 : 0;
+    // const sgst = enableTax ? amount * 0.09 : 0;
+    const total = amount + vat;
     const roundedTotal = roundOffTotal ? Math.round(total) : total;
     
-    return { amount, cgst, sgst, total: roundedTotal };
+    return { amount, vat, total: roundedTotal };
   };
 
-  const { amount, cgst, sgst, total } = calculateTotals();
+  const { amount, vat, total } = calculateTotals();
 
   const numberToWords = (num) => {
-    // This is a simplified version - you might want to use a library for full functionality
+    
     const words = [
       'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
       'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
@@ -106,31 +148,11 @@ const [newClient, setNewClient] = useState({
     return num; // Simplified - would need more logic for larger numbers
   };
 
-  useEffect(()=>{
-    console.log(selectedCompany)
-  },[selectedCompany])
+  // useEffect(()=>{
+  //   console.log(selectedCompany)
+  // },[selectedCompany])
 
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-   const [formData, setFormData] = useState({
-    billedBy: '',
-    billedTo: '',
-    quotationDate:'',
-    currency:'',
-    status:'',
-    additionalNotes:'',
-    referenceNumber:'',
-    enableTax: true,
-    items: [{
-      service: '',
-      description: '',
-      quantity: 1,
-      unitCost: 0,
-      vat: 18,
-    }]
-  });
 
 
   const handleSubmit = async (e) => {
@@ -259,15 +281,35 @@ const handleAddClient = async (e) => {
                   <Form.Label>Currency</Form.Label>
                   <Form.Select 
                   value={formData.currency}
-                    onChange={(e) => {
+                    onChange={ async(e) => {
                         const value = e.target.value;
+                        const selectedOption = e.target.options[e.target.selectedIndex];
+                        const fullCurrency = JSON.parse(selectedOption.dataset.currency);
+
+
+                        // if (!converted?.[fullCurrency?.key]) {
+                        //   // Call conversion API from previousCurrency to newCurrency
+                        //   await convertCurrency();
+                        // }
+                        setPreviousCurrency(selectedCurrency);
+
+                        setSelectedCurrency(fullCurrency);
                         setFormData({...formData, currency: value});
                       }}
                       >
                     <option>Select Currency</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="RWF">RWF</option>
+                    {
+                      currencies?.map(currency=>(
+                        // <option value={currency?.name} data={currency}>{currency?.name}</option>
+                        <option 
+                          key={currency.key}
+                          value={currency.name}
+                          data-currency={JSON.stringify(currency)}
+                          >
+                          {currency.name}
+                        </option>
+                      ))
+                    }
                   </Form.Select>
                 </Form.Group>
               </div>
@@ -339,7 +381,7 @@ const handleAddClient = async (e) => {
                       setSelectedCompany(selected);
                     }}
                   >
-                    <option value="">Select</option>
+                    <option>Select</option>
                     {companies?.map((company) => (
                       <option key={company._id} value={company._id}>
                         {company.name}
@@ -348,7 +390,7 @@ const handleAddClient = async (e) => {
                   </Form.Select>
                 </Form.Group>
                 {
-                 Object.keys(selectedCompany).length>0  && 
+                 Object.keys(selectedCompany)?.length>0  && 
                   <div className="p-3 bg-light rounded">
                   <div className="fw-bold">{selectedCompany?.name}</div>
                   <div className="text-muted small">
@@ -377,7 +419,7 @@ const handleAddClient = async (e) => {
                         setFormData({...formData, billedTo: selectedId});
                       }}
                     >
-                      <option value="">Select</option>
+                      <option>Select</option>
                       {customers?.map((customer) => (
                         <option key={customer._id} value={customer._id}>
                           {customer.name}
@@ -434,8 +476,8 @@ const handleAddClient = async (e) => {
                     <th>Service</th>
                     <th>Description</th>
                     <th>Quantity</th>
-                    <th>Unit Cost</th>
-                    <th>Total VAT</th>
+                    <th>Unit Cost ({selectedCurrency?.symbol? selectedCurrency?.symbol: '$'})</th>
+                    {/* <th>Total VAT</th> */}
                     <th>Total Tax Incl.</th>
                     <th></th>
                   </tr>
@@ -472,8 +514,8 @@ const handleAddClient = async (e) => {
                           onChange={(e) => handleItemChange(index, 'unitCost', e.target.value)}
                         />
                       </td>
-                      <td>{item.vat}</td>
-                      <td>${item.total.toFixed(2)}</td>
+                      {/* <td>{item.vat}</td> */}
+                      <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td>
                       <td>
                         <Button variant="link" onClick={() => deleteItem(index)}>
                           <i className="bi bi-trash"></i>
@@ -511,21 +553,21 @@ const handleAddClient = async (e) => {
               <div className="p-3 bg-light rounded">
                 <div className="d-flex justify-content-between mb-2">
                   <span>Amount</span>
-                  <span>${amount.toFixed(2)}</span>
+                  <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(amount.toFixed(2)).toLocaleString()}</span>
                 </div>
                 {enableTax && (
                   <>
                     <div className="d-flex justify-content-between mb-2">
-                      <span>CGST (9%)</span>
-                      <span>${cgst.toFixed(2)}</span>
+                      <span>VAT (18%)</span>
+                      <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(vat.toFixed(2)).toLocaleString()}</span>
                     </div>
-                    <div className="d-flex justify-content-between mb-2">
+                    {/* <div className="d-flex justify-content-between mb-2">
                       <span>SGST (9%)</span>
-                      <span>${sgst.toFixed(2)}</span>
-                    </div>
+                      <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(sgst.toFixed(2)).toLocaleString()}</span>
+                    </div> */}
                   </>
                 )}
-                <Button variant="outline-primary" className="w-100 mb-3">● Add Additional Charges</Button>
+                {/* <Button variant="outline-primary" className="w-100 mb-3">● Add Additional Charges</Button> */}
                 <div className="d-flex justify-content-between mb-2">
                   <span>Discount</span>
                   <span>0%</span>
@@ -540,15 +582,15 @@ const handleAddClient = async (e) => {
                     />
                     <label className="form-check-label">Round Off Total</label>
                   </div>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(total.toFixed(2)).toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2 fw-bold">
                   <span>Total (USD)</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(total.toFixed(2)).toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between">
                   <span>Total In Words</span>
-                  <span>{numberToWords(total)} Dollars</span>
+                  <span>{numberToWords(total.toLocaleString())} {selectedCurrency?.cName ? selectedCurrency?.cName: 'Dollars'}</span>
                 </div>
               </div>
             </div>
@@ -557,7 +599,7 @@ const handleAddClient = async (e) => {
           {/* Signature Section */}
           <div className="mb-4">
             <div className="row justify-content-center">
-              <div className="col-md-6">
+              {/* <div className="col-md-6">
                 <Form.Group className="mb-3">
                   <Form.Label>Select Signature</Form.Label>
                   <Form.Select>
@@ -574,7 +616,7 @@ const handleAddClient = async (e) => {
                 <Button variant="outline-secondary" className="w-100">
                   <i className="bi bi-upload me-2"></i>Upload Signature
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

@@ -3,10 +3,15 @@ import QuotationModal from '../Components/Proforma/QuotationModal'
 import { deleteData, fetchData } from '../../utility/api';
 import { Nav } from 'react-bootstrap';
 import moment from 'moment';
+import ViewQuatation from '../Components/Proforma/ViewQuatation';
 
 function Proforma() {
     const [showModal, setShowModal] = useState(false);
     const [proformas,setProformas] = useState([])
+    const [selectedQuatation,setSelectedQuatation]=useState({})
+
+    const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState({});
 
     const readProforma = async ()=>{
       try {
@@ -37,7 +42,7 @@ function Proforma() {
 
 const exportQuotation = (quotation) => {
         // Check if quotation data exists
-        if (!quotation || !quotation.items) {
+        if (!quotation || !quotation?.items) {
             alert('Quotation data is incomplete');
             return;
         }
@@ -45,14 +50,14 @@ const exportQuotation = (quotation) => {
         const printWindow = window.open('', '_blank');
 
         // Calculate totals safely
-        const subtotal = quotation.items.reduce((sum, item) => sum + (item.total || 0), 0);
-        const taxAmount = quotation.enableTax ? subtotal * 0.18 : 0;
+        const subtotal = quotation?.items.reduce((sum, item) => sum + (item.total || 0), 0);
+        const taxAmount = quotation?.enableTax ? subtotal * 0.18 : 0;
         const total = subtotal + taxAmount;
 
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Quotation ${quotation._id || 'N/A'}</title>
+                    <title>Quotation ${quotation?._id || 'N/A'}</title>
                     <style>
                         body { font-family: Arial, sans-serif; margin: 20px; }
                         .header { text-align: center; margin-bottom: 30px; }
@@ -72,24 +77,24 @@ const exportQuotation = (quotation) => {
                 <body>
                     <div class="header">
                         <h1>QUOTATION</h1>
-                        <p>Quotation #: ${quotation.quotationId || 'N/A'}</p>
-                        <p>Date: ${quotation.quotationDate ? new Date(quotation.quotationDate).toLocaleDateString() : 'N/A'}</p>
+                        <p>Quotation #: ${quotation?.quotationId || 'N/A'}</p>
+                        <p>Date: ${quotation?.quotationDate ? new Date(quotation?.quotationDate).toLocaleDateString() : 'N/A'}</p>
                     </div>
                     
                     <div class="details">
                         <div class="bill-section">
                             <h3>From:</h3>
-                            <p><strong>${quotation.billedBy?.name || 'N/A'}</strong></p>
-                            <p>${quotation.billedBy?.address || ''}</p>
-                            <p>Phone: ${quotation.billedBy?.phone || ''}</p>
-                            <p>Email: ${quotation.billedBy?.email || ''}</p>
+                            <p><strong>${quotation?.billedBy?.name || 'N/A'}</strong></p>
+                            <p>${quotation?.billedBy?.address || ''}</p>
+                            <p>Phone: ${quotation?.billedBy?.phone || ''}</p>
+                            <p>Email: ${quotation?.billedBy?.email || ''}</p>
                         </div>
                         <div class="bill-section right">
                             <h3>To:</h3>
-                            <p><strong>${quotation.billedTo?.name || 'N/A'}</strong></p>
-                            <p>${quotation.billedTo?.address || ''}</p>
-                            <p>Phone: ${quotation.billedTo?.phone || ''}</p>
-                            <p>Email: ${quotation.billedTo?.email || ''}</p>
+                            <p><strong>${quotation?.billedTo?.name || 'N/A'}</strong></p>
+                            <p>${quotation?.billedTo?.address || ''}</p>
+                            <p>Phone: ${quotation?.billedTo?.phone || ''}</p>
+                            <p>Email: ${quotation?.billedTo?.email || ''}</p>
                         </div>
                     </div>
                     
@@ -105,31 +110,31 @@ const exportQuotation = (quotation) => {
                             </tr>
                         </thead>
                         <tbody>
-                            ${quotation.items.map(item => `
+                            ${quotation?.items?.map(item => `
                                 <tr>
                                     <td>${item.service || ''}</td>
                                     <td>${item.description || ''}</td>
                                     <td>${item.quantity || 0}</td>
-                                    <td>${(item.unitCost || 0).toFixed(2)} ${quotation.currency || 'USD'}</td>
+                                    <td>${(item.unitCost || 0).toFixed(2)} ${quotation?.currency || 'USD'}</td>
                                     <td>${item.vat || 0}%</td>
-                                    <td>${(item.total || 0).toFixed(2)} ${quotation.currency || 'USD'}</td>
+                                    <td>${(item.total || 0).toFixed(2)} ${quotation?.currency || 'USD'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                     
                     <div class="total-section">
-                        <p>Subtotal: ${subtotal.toFixed(2)} ${quotation.currency || 'USD'}</p>
-                        ${quotation.enableTax ? `
-                            <p>Tax (18%): ${taxAmount.toFixed(2)} ${quotation.currency || 'USD'}</p>
+                        <p>Subtotal: ${subtotal.toFixed(2)} ${quotation?.currency || 'USD'}</p>
+                        ${quotation?.enableTax ? `
+                            <p>Tax (18%): ${taxAmount.toFixed(2)} ${quotation?.currency || 'USD'}</p>
                         ` : ''}
-                        <p><strong>Total: ${total.toFixed(2)} ${quotation.currency || 'USD'}</strong></p>
+                        <p><strong>Total: ${total.toFixed(2)} ${quotation?.currency || 'USD'}</strong></p>
                     </div>
                     
-                    ${quotation.notes ? `
+                    ${quotation?.notes ? `
                         <div class="notes">
                             <h3>Notes:</h3>
-                            <p>${quotation.notes}</p>
+                            <p>${quotation?.notes}</p>
                         </div>
                     ` : ''}
                     
@@ -298,13 +303,26 @@ const exportQuotation = (quotation) => {
                               popover='auto' 
                               anchor={`exportBtn${proforma?._id}`}>
                                 <Nav className="flex-column">
+
+                                  <Nav.Item onClick={(e) => {
+                                    e.stopPropagation(); // This prevents the event from bubbling up
+                                    setSelectedQuotation(proforma);
+                                    setShowViewModal(true)
+                                  }}>
+                                    <span>View</span>
+                                  </Nav.Item>
+
                                   <Nav.Item onClick={(e) => {
                                     e.stopPropagation(); // This prevents the event from bubbling up
                                     exportQuotation(proforma);
                                   }}>
                                     <span>Print</span>
                                   </Nav.Item>
-                                  <Nav.Item>
+                                  <Nav.Item onClick={(e)=>{
+                                    e.stopPropagation();
+                                    setSelectedQuatation(proforma)
+                                    setShowModal(true)
+                                  }}>
                                     <span>Edit</span>
                                   </Nav.Item>
                                   <Nav.Item
@@ -350,11 +368,18 @@ const exportQuotation = (quotation) => {
     </div>
 </div>
 
-
-<QuotationModal 
+      <QuotationModal 
         show={showModal} 
         handleClose={() => setShowModal(false)} 
+        quotation={selectedQuatation}
       />
+
+      <ViewQuatation
+        show={showViewModal}
+        handleClose={() => setShowViewModal(false)}
+        quotation={selectedQuotation}
+      />
+
     </>
   )
 }
