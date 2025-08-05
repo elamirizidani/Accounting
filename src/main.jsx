@@ -12,7 +12,7 @@ import AppRouter from './MainLayout/Router'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/Accounting">
       <AppRouter />
     </BrowserRouter>
   </StrictMode>
