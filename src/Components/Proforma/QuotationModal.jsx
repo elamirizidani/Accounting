@@ -8,7 +8,7 @@ import ClientFormModal from './ClientFormModal';
 import axios from 'axios';
 
 
-const QuotationModal = ({ show, handleClose,quotation ={} }) => {
+const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   const [enableTax, setEnableTax] = useState(true);
   const [addDueDate, setAddDueDate] = useState(false);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
@@ -34,6 +34,7 @@ const currencies = [
 
   const [customers,setCustomers] = useState([])
   const [companies,setCompanies] = useState([])
+  const [services,setServices] = useState([])
   const [selectedCustomer,setSelectedCustomer] = useState(quotation?.billedTo||{})
   const [selectedCompany,setSelectedCompany] = useState(quotation?.billedBy||{})
   const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === quotation?.currency)||{})
@@ -49,27 +50,36 @@ const currencies = [
     email: ''
   });
 
-  const [formData, setFormData] = useState(quotation ||{
-    billedBy: '',
-    billedTo: '',
-    quotationDate:'',
-    currency:'',
-    status:'',
-    additionalNotes:'',
-    referenceNumber:'',
-    enableTax: true,
-    items: [{
-      service: '',
-      description: '',
-      quantity: 1,
-      unitCost: 0,
-      vat: 18,
-    }]
-  });
+  // const [formData, setFormData] = useState(quotation ||{
+  //   billedBy: '',
+  //   billedTo: '',
+  //   quotationDate:'',
+  //   currency:'',
+  //   status:'',
+  //   additionalNotes:'',
+  //   referenceNumber:'',
+  //   enableTax: true,
+  //   items: [{
+  //     service: '',
+  //     description: '',
+  //     quantity: 1,
+  //     unitCost: 0,
+  //     vat: 18,
+  //   }]
+  // });
+
+
+  const [formData, setFormData] = useState({
+    ...quotation,
+    items: quotation?.items || [],
+    enableTax: quotation?.enableTax ?? true,
+    roundOffTotal: quotation?.roundOffTotal ?? true
+  })
+
   // console.log(quotation)
 
   
-
+console.log('quotation data',quotation)
 
       const readCustomers = async ()=>{
         try {
@@ -87,17 +97,33 @@ const currencies = [
           console.log(error)
         }
       }
+      const readServices = async ()=>{
+        try {
+          const res = await fetchData('services')
+          setServices(res || [])
+        } catch (error) {
+          console.log(error)
+        }
+      }
       useEffect(()=>{
         readCompanies()
         readCustomers()
+        readServices()
       },[])
 
   const toggleSwitch = (stateSetter) => {
     stateSetter(prev => !prev);
   };
 
-  const addNewItem = () => {
-    setItems([...items, { service: '', description: '', quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+  // const addNewItem = (service,name) => {
+  //   setItems([...items, { service: service,name:name, description: '', quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+  // };
+
+
+  const addNewItem = (service, name) => {
+    if (!items.some(item => item.service === service)) {
+      setItems([...items, { service, name, description: '', quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+    }
   };
 
   const deleteItem = (index) => {
@@ -179,7 +205,7 @@ const currencies = [
 
 // console.log(JSON.stringify(payload))
 
-    const response = await insertData('quotations',payload);
+    const response = await insertData('quotation',payload);
     alert('Quotation created successfully!');
     // console.log(response);
 
@@ -460,15 +486,26 @@ const handleAddClient = async (e) => {
 
           {/* Items & Details */}
           <div className="mb-4">
-            {/* <h2 className="h5 mb-3">Items & Details</h2>
+            <h2 className="h5 mb-3">Items & Details</h2>
             <Form.Group className="mb-3">
               <Form.Label>Services</Form.Label>
-              <Form.Select>
+              <Form.Select
+                onChange={(e) => {
+                  const { value, selectedOptions } = e.target;
+                  if (value && value.toLowerCase() !== "select") {
+                    const name = selectedOptions[0]?.dataset.name;
+                    addNewItem(value, name);
+                  }
+                }}
+              >
                 <option>Select</option>
-                <option value="service1">Service 1</option>
-                <option value="service2">Service 2</option>
+                {services?.map(service => (
+                  <option key={service._id} value={service._id} data-name={service.service}>
+                    {service.service}
+                  </option>
+                ))}
               </Form.Select>
-            </Form.Group> */}
+            </Form.Group>
             <div className="table-responsive">
               <Table bordered>
                 <thead>
@@ -489,8 +526,8 @@ const handleAddClient = async (e) => {
     
                         <Form.Control 
                           type="text" 
-                          value={item.service} 
-                          onChange={(e) => handleItemChange(index, 'service', e.target.value)}
+                          value={item.name} 
+                          disabled
                         />
                         </td>
                       <td>
@@ -526,7 +563,6 @@ const handleAddClient = async (e) => {
                 </tbody>
               </Table>
             </div>
-            <Button variant="outline-primary" onClick={addNewItem}>● Add New</Button>
           </div>
 
           {/* Calculation Section */}

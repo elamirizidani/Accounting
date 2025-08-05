@@ -1,4 +1,4 @@
-import React,{useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 import QuotationModal from '../Components/Proforma/QuotationModal'
 import { deleteData, fetchData } from '../../utility/api';
 import { Nav } from 'react-bootstrap';
@@ -7,49 +7,43 @@ import ViewQuatation from '../Components/Proforma/ViewQuatation';
 
 function Proforma() {
     const [showModal, setShowModal] = useState(false);
-    const [proformas,setProformas] = useState([])
-    const [selectedQuatation,setSelectedQuatation]=useState({})
-
+    const [proformas, setProformas] = useState([]);
+    // Fixed: Combined duplicate state variables
+    const [selectedQuotation, setSelectedQuotation] = useState({});
     const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedQuotation, setSelectedQuotation] = useState({});
 
-    const readProforma = async ()=>{
-      try {
-        const res = await fetchData('quotations')
-        setProformas(res || [])
-      } catch (error) {
-        console.log(error)
-      }
-    }
-    useEffect(()=>{
-      readProforma()
-    },[])
-
-    const deleteQuotation = async (id)=>{
-      try {
-        const res = await deleteData('quotations',id)
-        if(res.status === 200)
-        {
-          alert(res.data.message)
-          readProforma()
+    const readProforma = async () => {
+        try {
+            const res = await fetchData('quotation');
+            setProformas(res || []);
+        } catch (error) {
+            console.log(error);
         }
-        
-      } catch (error) {
-        console.log(error)
-      }
-    }
+    };
 
+    useEffect(() => {
+        readProforma();
+    }, []);
 
-const exportQuotation = (quotation) => {
-        // Check if quotation data exists
+    const deleteQuotation = async (id) => {
+        try {
+            const res = await deleteData('quotation', id);
+            if (res.status === 200) {
+                alert(res.data.message);
+                readProforma();
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const exportQuotation = (quotation) => {
         if (!quotation || !quotation?.items) {
             alert('Quotation data is incomplete');
             return;
         }
-        // Create a printable version of the quotation
-        const printWindow = window.open('', '_blank');
 
-        // Calculate totals safely
+        const printWindow = window.open('', '_blank');
         const subtotal = quotation?.items.reduce((sum, item) => sum + (item.total || 0), 0);
         const taxAmount = quotation?.enableTax ? subtotal * 0.18 : 0;
         const total = subtotal + taxAmount;
@@ -69,9 +63,7 @@ const exportQuotation = (quotation) => {
                         th { background-color: #f5f5f5; }
                         .total-section { text-align: right; font-weight: bold; }
                         .signature { margin-top: 50px; }
-                        @media print {
-                            body { margin: 0; }
-                        }
+                        @media print { body { margin: 0; } }
                     </style>
                 </head>
                 <body>
@@ -112,7 +104,7 @@ const exportQuotation = (quotation) => {
                         <tbody>
                             ${quotation?.items?.map(item => `
                                 <tr>
-                                    <td>${item.service || ''}</td>
+                                    <td>${item?.service?.service || ''}</td>
                                     <td>${item.description || ''}</td>
                                     <td>${item.quantity || 0}</td>
                                     <td>${(item.unitCost || 0).toFixed(2)} ${quotation?.currency || 'USD'}</td>
@@ -154,234 +146,225 @@ const exportQuotation = (quotation) => {
         `);
     };
 
-  return (
-    <>
-      <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas"
-     aria-labelledby="filterOffcanvasLabel">
-  <div class="offcanvas-header">
-    <h5 class="fw-bold mb-0" id="filterOffcanvasLabel">Filter</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
-            aria-label="Close"></button>
-  </div>
+    const handleView = (proforma) => {
+        setSelectedQuotation(proforma);
+        setShowViewModal(true);
+    };
 
-  <div class="offcanvas-body">
-    <form id="proformaFilterForm">
-      <div class="mb-4">
-        <label class="form-label">Customers</label>
-        <select class="form-select" id="filterCustomer">
-          <option value="">Select</option>
-          <option value="Bank Of Kigali">Bank Of Kigali</option>
-          <option value="KCB Bank">KCB Bank</option>
-          <option value="Equity Bank">Equity Bank</option>
-          <option value="Cogebanque">Cogebanque</option>
-        </select>
-      </div>
+    const handleEdit = (proforma={}) => {
+        setSelectedQuotation(proforma);
+        setShowModal(true);
+    };
 
-      <div class="mb-4">
-        <label class="form-label">Date Range</label>
-        <div class="input-group">
-          <input type="text" class="form-control" id="filterDateRange"
-                 placeholder="06/12/2025 - 06/18/2025" />
-          <span class="input-group-text"><i class="bi bi-calendar"></i></span>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Quotation Id</label>
-        <select class="form-select" id="filterQuotation">
-          <option value="">Select</option>
-          <option value="QU0014">QU0014</option>
-          <option value="QU0015">QU0015</option>
-          <option value="QU0016">QU0016</option>
-        </select>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="filterStatus">
-          <option value="">Select</option>
-          <option value="Accepted">Accepted</option>
-          <option value="Pending">Pending</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-      </div>
-
-      <div class="d-flex gap-3 pt-3">
-        <button type="button" id="resetFilter" class="btn btn-outline-secondary w-50">Reset</button>
-        <button type="submit" class="btn btn-primary w-50">Submit</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="content-area">
-    <div class="containa">
-        <div class="header main-header">
-            <h2>Proforma</h2>
-            <div class="header-actions">
-                <button class="btn btn-secondary">
-                    <i class="bi bi-upload"></i>
-                    Export
-                </button>
-                <button onClick={() => setShowModal(true)} class="btn btn-primary" data-page="./create-Proforma.html">
-                    <i class="bi bi-plus-circle"></i>
-                    New Proforma
-                </button>
-                <QuotationModal/>
+    return (
+        <>
+            {/* Filter Offcanvas */}
+            <div className="offcanvas offcanvas-end" tabIndex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel">
+                <div className="offcanvas-header">
+                    <h5 className="fw-bold mb-0" id="filterOffcanvasLabel">Filter</h5>
+                    <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div className="offcanvas-body">
+                    <form id="proformaFilterForm">
+                        <div className="mb-4">
+                            <label className="form-label">Customers</label>
+                            <select className="form-select" id="filterCustomer">
+                                <option value="">Select</option>
+                                <option value="Bank Of Kigali">Bank Of Kigali</option>
+                                <option value="KCB Bank">KCB Bank</option>
+                                <option value="Equity Bank">Equity Bank</option>
+                                <option value="Cogebanque">Cogebanque</option>
+                            </select>
+                        </div>
+                        <div className="mb-4">
+                            <label className="form-label">Date Range</label>
+                            <div className="input-group">
+                                <input type="text" className="form-control" id="filterDateRange" placeholder="06/12/2025 - 06/18/2025" />
+                                <span className="input-group-text"><i className="bi bi-calendar"></i></span>
+                            </div>
+                        </div>
+                        <div className="mb-4">
+                            <label className="form-label">Quotation Id</label>
+                            <select className="form-select" id="filterQuotation">
+                                <option value="">Select</option>
+                                <option value="QU0014">QU0014</option>
+                                <option value="QU0015">QU0015</option>
+                                <option value="QU0016">QU0016</option>
+                            </select>
+                        </div>
+                        <div className="mb-4">
+                            <label className="form-label">Status</label>
+                            <select className="form-select" id="filterStatus">
+                                <option value="">Select</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div className="d-flex gap-3 pt-3">
+                            <button type="button" id="resetFilter" className="btn btn-outline-secondary w-50">Reset</button>
+                            <button type="submit" className="btn btn-primary w-50">Submit</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <div class="controls">
-            <div class="search-container">
-                <div class="search-icon"><i class="bi bi-search"></i></div>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search"/>
-            </div>
-            <div class="filter-controls">
-                <div class="dropdown" id="dateDropdown">
-                    <button class="btn calenda-bt" id="toggleDropdown">
-                    <i class="bi bi-calendar4-week"></i> 
-                    <span>16 Jun 25 - 16 Jun 25</span>
-                    </button>
-                     
-                    <div class="dropdown-content">
-                    <i class="bi bi-caret-up-fill "></i>
-                    <a href="#">Today</a>
-                    <a href="#">Yesterday</a>
-                    <a href="#">Last 7 Days</a>
-                    <a href="#">Last 30 Days</a>
-                    <a href="#">This Month</a>
-                    <a href="#">Last Month</a>
-                    <a href="#">Custom Range</a>
+            {/* Main Content */}
+            <div className="content-area">
+                <div className="containa">
+                    <div className="header main-header">
+                        <h2>Proforma</h2>
+                        <div className="header-actions">
+                            <button className="btn btn-secondary">
+                                <i className="bi bi-upload"></i>
+                                Export
+                            </button>
+                            <button onClick={() => handleEdit()} className="btn btn-primary">
+                                <i className="bi bi-plus-circle"></i>
+                                New Proforma
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="controls">
+                        <div className="search-container">
+                            <div className="search-icon"><i className="bi bi-search"></i></div>
+                            <input type="text" className="search-input" id="searchInput" placeholder="Search"/>
+                        </div>
+                        <div className="filter-controls">
+                            <div className="dropdown" id="dateDropdown">
+                                <button className="btn calenda-bt" id="toggleDropdown">
+                                    <i className="bi bi-calendar4-week"></i> 
+                                    <span>16 Jun 25 - 16 Jun 25</span>
+                                </button>
+                                <div className="dropdown-content">
+                                    <i className="bi bi-caret-up-fill"></i>
+                                    <a href="#">Today</a>
+                                    <a href="#">Yesterday</a>
+                                    <a href="#">Last 7 Days</a>
+                                    <a href="#">Last 30 Days</a>
+                                    <a href="#">This Month</a>
+                                    <a href="#">Last Month</a>
+                                    <a href="#">Custom Range</a>
+                                </div>
+                            </div>
+                            <button className="filter-btn" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+                                <i className="bi bi-funnel"></i>
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="table-container">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th><input className="form-check-input" type="checkbox" id="select-all"/></th>
+                                    <th>Proforma ID</th>
+                                    <th>Company</th>
+                                    <th>Client</th>
+                                    <th>Created On</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                {proformas?.map((proforma, i) => {
+                                    const statusColor = proforma.status === 'Accepted' ? '#28a745' : 
+                                                       proforma?.status === 'Pending' ? '#ffc107' : '#dc3545';
+                                    return (
+                                        <tr key={proforma._id || i}>
+                                            <td><input className="form-check-input row-checkbox" type="checkbox"/></td>
+                                            <td>{proforma?.quotationId}</td>
+                                            <td>{proforma?.billedBy?.name}</td>
+                                            <td>{proforma?.billedTo?.name}</td>
+                                            <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
+                                            <td>
+                                                <span className="status-badge" style={{backgroundColor: `${statusColor}20`, color: statusColor}}>
+                                                    <span className="status-dot" style={{backgroundColor: statusColor}}></span>
+                                                    {proforma?.status}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button 
+                                                    popoverTarget={`export-${i}`} 
+                                                    id={`exportBtn${proforma?._id}`}
+                                                    type='button' 
+                                                    className="actions-btn information">⋯</button>
+                                                <div 
+                                                    className='popoverInfo'
+                                                    id={`export-${i}`} 
+                                                    popover='auto' 
+                                                    anchor={`exportBtn${proforma?._id}`}>
+                                                    <Nav className="flex-column">
+                                                        <Nav.Item onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleView(proforma);
+                                                        }}>
+                                                            <span>View</span>
+                                                        </Nav.Item>
+                                                        <Nav.Item onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            exportQuotation(proforma);
+                                                        }}>
+                                                            <span>Print</span>
+                                                        </Nav.Item>
+                                                        <Nav.Item onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEdit(proforma);
+                                                        }}>
+                                                            <span>Edit</span>
+                                                        </Nav.Item>
+                                                        <Nav.Item onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteQuotation(proforma?._id);
+                                                        }}>
+                                                            <span>Delete</span>
+                                                        </Nav.Item>
+                                                    </Nav>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div className="pagination">
+                        <div className="pagination-info">
+                            <span>Row Per Page</span>
+                            <select className="pagination-select" id="rowsPerPage">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>Entries</span>
+                        </div>
+                        <div className="pagination-nav">
+                            <button className="pagination-btn" id="prevPage" disabled>‹</button>
+                            <span id="pageNumbers"></span>
+                            <button className="pagination-btn" id="nextPage">›</button>
+                        </div>
                     </div>
                 </div>
-                <button class="filter-btn" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
-                    <i class="bi bi-funnel"></i>
-                    Filter
-                </button>
             </div>
-        </div>
 
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th><input class="form-check-input" type="checkbox" id="select-all"/></th>
-                        <th>Proforma ID</th>
-                        <th>Company</th>
-                        <th>Client</th>
-                        <th>Created On</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                  {
-                    proformas && proformas?.map((proforma,i)=>{
-                      const statusColor = proforma.status === 'Accepted' ? '#28a745' : proforma?.status === 'Pending' ? '#ffc107' : '#dc3545';
-                      return(
-                        <tr key={i}>
-                          <td><input className="form-check-input row-checkbox" type="checkbox"/></td>
-                          <td>{proforma?.quotationId}</td>
-                          <td>{proforma?.billedBy?.name}</td>
-                          <td>{proforma?.billedTo?.name}</td>
-                          <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
-                          <td>
-                              <span className="status-badge" style={{backgroundColor: `${statusColor}20`, color: statusColor}}>
-                                  <span className="status-dot" style={{backgroundColor: statusColor}}></span>
-                                  {proforma?.status}
-                              </span>
-                          </td>
-                          <td>
-                            <button 
-                              popoverTarget={`export-${i}`} 
-                              id={`exportBtn${proforma?._id}`}
-                              type='button' 
-                              className="actions-btn information">⋯</button>
-                            <div 
-                              className='popoverInfo'
-                              id={`export-${i}`} 
-                              popover='auto' 
-                              anchor={`exportBtn${proforma?._id}`}>
-                                <Nav className="flex-column">
+            {/* Modals */}
+            <QuotationModal 
+                show={showModal} 
+                handleClose={() => setShowModal(false)} 
+                quotation={selectedQuotation}
+            />
 
-                                  <Nav.Item onClick={(e) => {
-                                    e.stopPropagation(); // This prevents the event from bubbling up
-                                    setSelectedQuotation(proforma);
-                                    setShowViewModal(true)
-                                  }}>
-                                    <span>View</span>
-                                  </Nav.Item>
-
-                                  <Nav.Item onClick={(e) => {
-                                    e.stopPropagation(); // This prevents the event from bubbling up
-                                    exportQuotation(proforma);
-                                  }}>
-                                    <span>Print</span>
-                                  </Nav.Item>
-                                  <Nav.Item onClick={(e)=>{
-                                    e.stopPropagation();
-                                    setSelectedQuatation(proforma)
-                                    setShowModal(true)
-                                  }}>
-                                    <span>Edit</span>
-                                  </Nav.Item>
-                                  <Nav.Item
-                                    onClick={(e) => {
-                                      e.stopPropagation(); // This prevents the event from bubbling up
-                                      deleteQuotation(proforma?._id);
-                                    }}
-                                    >
-                                    <span>Delete</span>
-                                  </Nav.Item>
-                                  
-                                </Nav>
-                                
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  }
-
-                  
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="pagination">
-            <div class="pagination-info">
-                <span>Row Per Page</span>
-                <select class="pagination-select" id="rowsPerPage">
-                    <option value="5">5</option>
-                    <option value="10" selected>10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                </select>
-                <span>Entries</span>
-            </div>
-            <div class="pagination-nav">
-                <button class="pagination-btn" id="prevPage" disabled>‹</button>
-                <span id="pageNumbers"></span>
-                <button class="pagination-btn" id="nextPage">›</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-      <QuotationModal 
-        show={showModal} 
-        handleClose={() => setShowModal(false)} 
-        quotation={selectedQuatation}
-      />
-
-      <ViewQuatation
-        show={showViewModal}
-        handleClose={() => setShowViewModal(false)}
-        quotation={selectedQuotation}
-      />
-
-    </>
-  )
+            <ViewQuatation
+                show={showViewModal}
+                handleClose={() => setShowViewModal(false)}
+                quotation={selectedQuotation}
+            />
+        </>
+    );
 }
 
-export default Proforma
+export default Proforma;

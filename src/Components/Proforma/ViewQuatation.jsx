@@ -14,12 +14,31 @@ console.log(quotation)
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const numberToWords = (num) => {
-    // Implement your number to words conversion logic
-    const words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
-    if (num <= 10) return words[num];
-    return num?.toString();
+  const calculateTotals = () => {
+    const amount = quotation?.items?.reduce((sum, item) => sum + (item.total || 0), 0);
+    const vat =  amount * 0.18;
+    // const sgst = enableTax ? amount * 0.09 : 0;
+    const total = amount + vat;
+    
+    return { amount, vat, total: total };
   };
+
+  const { amount, vat, total } = calculateTotals();
+
+  const numberToWords = (num) => {
+    
+    const words = [
+      'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+    ];
+    const tens = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    
+    if (num < 20) return words[num];
+    if (num < 100) return tens[Math.floor(num/10)-2] + (num%10 ? ' ' + words[num%10] : '');
+    if (num < 1000) return words[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' and ' + numberToWords(num%100) : '');
+    return num; // Simplified - would need more logic for larger numbers
+  };
+
 
   return (
     <Modal show={show} onHide={handleClose} size="xl" centered className="quotation-view-modal">
@@ -44,7 +63,7 @@ console.log(quotation)
                 <h2 className="h4 text-primary">QUOTATION</h2>
                 <p className="mb-1"><strong>Date:</strong> {formatDate(quotation?.quotationDate)}</p>
                 <p className="mb-1"><strong>Reference:</strong> {quotation?.referenceNumber}</p>
-                <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p>
+                {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
               </div>
             </div>
 
@@ -66,7 +85,7 @@ console.log(quotation)
                   <Card.Body>
                     <h5 className="card-title">Quotation Details</h5>
                     <p className="mb-1"><strong>Currency:</strong> {quotation?.currency}</p>
-                    <p className="mb-1"><strong>Valid Until:</strong> {formatDate(quotation?.validUntil)}</p>
+                    {/* <p className="mb-1"><strong>Valid Until:</strong> {formatDate(quotation?.validUntil)}</p> */}
                     {quotation?.additionalNotes && (
                       <p className="mb-0"><strong>Notes:</strong> {quotation?.additionalNotes}</p>
                     )}
@@ -92,7 +111,7 @@ console.log(quotation)
                   {quotation?.items?.map((item, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td>{item?.service}</td>
+                      <td>{item?.service?.service}</td>
                       <td>{item?.description}</td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toFixed(2)}</td>
@@ -110,17 +129,17 @@ console.log(quotation)
                   <tbody>
                     <tr>
                       <td><strong>Subtotal</strong></td>
-                      <td className="text-end">{quotation?.subtotal?.toFixed(2) || '0.00'}</td>
+                      <td className="text-end">{amount?.toFixed(2) || '0.00'}</td>
                     </tr>
                     {quotation?.enableTax && (
                       <tr>
                         <td><strong>VAT (18%)</strong></td>
-                        <td className="text-end">{quotation?.vat?.toFixed(2) || '0.00'}</td>
+                        <td className="text-end">{vat?.toFixed(2) || '0.00'}</td>
                       </tr>
                     )}
                     <tr className="table-active">
                       <td><strong>Total Amount</strong></td>
-                      <td className="text-end"><strong>{quotation?.total?.toFixed(2) || '0.00'}</strong></td>
+                      <td className="text-end"><strong>{total?.toFixed(2) || '0.00'}</strong></td>
                     </tr>
                     {quotation?.roundOffTotal && quotation?.roundOffDifference && (
                       <tr>
@@ -137,7 +156,7 @@ console.log(quotation)
             <div className="mt-3">
               <p className="mb-1"><strong>Amount in Words:</strong></p>
               <p className="text-muted">
-                {numberToWords(quotation?.total)} {quotation?.currency} Only
+                {numberToWords(total)} {quotation?.currency} Only
               </p>
             </div>
 
