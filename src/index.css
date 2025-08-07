@@ -863,3 +863,10 @@ body {
 .dropdown-item:hover {
   background-color: #f1f1f1;
 }
+
+.bordered-left {
+  border-left: solid 5px #e88f3f;
+}
+.colored-text {
+  color: #e88f3f;
+}

@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Button, Form, Table,Spinner } from 'react-bootstrap';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Modal, Button, Form, Table,Spinner, Row, Col, Card } from 'react-bootstrap';
 import './create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from './ClientFormModal';
-import axios from 'axios';
+import AddService from './AddService';
 
 
 const QuotationModal = ({ show, handleClose,quotation = {} }) => {
-  const [enableTax, setEnableTax] = useState(true);
-  const [addDueDate, setAddDueDate] = useState(false);
-  const [roundOffTotal, setRoundOffTotal] = useState(true);
-  const [items, setItems] = useState(quotation?.items ||[]);
-const currencies = [
+  const currencies = useMemo(() => [
     {
       name:'USD',
       key:"USD",
@@ -30,25 +26,54 @@ const currencies = [
       symbol:'RWF',
       cName:'Rwandan Franc'
     }
-  ]
+  ], [])
 
+  const [enableTax, setEnableTax] = useState(true);
+  const [addDueDate, setAddDueDate] = useState(false);
+  const [roundOffTotal, setRoundOffTotal] = useState(true);
+  const [items, setItems] = useState(quotation?.items ||[]);
   const [customers,setCustomers] = useState([])
   const [companies,setCompanies] = useState([])
   const [services,setServices] = useState([])
   const [selectedCustomer,setSelectedCustomer] = useState(quotation?.billedTo||{})
   const [selectedCompany,setSelectedCompany] = useState(quotation?.billedBy||{})
   const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === quotation?.currency)||{})
-  const [previousCurrency, setPreviousCurrency] = useState(null);
 
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+
+  useEffect(() => {
+  if (quotation) {
+    setFormData({
+      ...quotation,
+      items: quotation.items || [],
+      enableTax: quotation.enableTax ?? true,
+      roundOffTotal: quotation.roundOffTotal ?? true
+    });
+    
+    setItems(quotation.items || []);
+    setSelectedCustomer(quotation.billedTo || {});
+    setSelectedCompany(quotation.billedBy || {});
+    setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency) || {});
+  }
+}, [quotation,currencies]);
+
+
+  
   const [newClient, setNewClient] = useState({
     name: '',
     address: '',
     phone: '',
     email: ''
   });
+  const [newService, setNewService] = useState({
+    service: '',
+    description: ''
+  });
+
 
   // const [formData, setFormData] = useState(quotation ||{
   //   billedBy: '',
@@ -76,10 +101,6 @@ const currencies = [
     roundOffTotal: quotation?.roundOffTotal ?? true
   })
 
-  // console.log(quotation)
-
-  
-console.log('quotation data',quotation)
 
       const readCustomers = async ()=>{
         try {
@@ -119,10 +140,11 @@ console.log('quotation data',quotation)
   //   setItems([...items, { service: service,name:name, description: '', quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
   // };
 
+// const generateId = () => Date.now() + Math.random().toString(16).slice(2);
 
-  const addNewItem = (service, name) => {
+  const addNewItem = (service ='', name ='',description='') => {
     if (!items.some(item => item.service === service)) {
-      setItems([...items, { service, name, description: '', quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+      setItems([...items, { service, name, description: description, quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
     }
   };
 
@@ -192,7 +214,7 @@ console.log('quotation data',quotation)
       billedTo: selectedCustomer?._id,
       currency:formData.currency,
       status:formData.status,
-      additionalNotes:formData.additionalNotes,
+      termsAndConditions:formData.termsAndConditions,
       referenceNumber:formData.referenceNumber,
       items: items,
       enableTax,
@@ -221,37 +243,72 @@ console.log('quotation data',quotation)
 
 
 
-const handleAddClient = async (e) => {
-  if (e) e.preventDefault();  // Prevent default if event exists
-  
-  // Basic validation
-  if (!newClient.name || !newClient.email) {
-    alert('Please fill in required fields');
-    return;
-  }
-
-  try {
-    setLoading(true);
-    const response = await insertData('customers', newClient);
+  const handleAddClient = async (e) => {
+    if (e) e.preventDefault();  // Prevent default if event exists
     
-    // Update state
-    setCustomers([...customers, response]);
-    setSelectedCustomer(response);
-    setFormData({...formData, billedTo: response._id});
-    
-    // Reset and close
-    setNewClient({ name: '', address: '', phone: '', email: '' });
-    setShowClientForm(false);
-    
-  } catch (error) {
-    console.error('Error adding client:', error);
-    alert('Failed to add client: ' + (error.message || 'Please try again'));
-  } finally {
-    setLoading(false);
-  }
-};
+    // Basic validation
+    if (!newClient.name || !newClient.email) {
+      alert('Please fill in required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await insertData('customers', newClient);
+      
+      // Update state
+      setCustomers([...customers, response]);
+      setSelectedCustomer(response);
+      setFormData({...formData, billedTo: response._id});
+      
+      // Reset and close
+      setNewClient({ name: '', address: '', phone: '', email: '' });
+      setShowClientForm(false);
+      
+    } catch (error) {
+      console.error('Error adding client:', error);
+      alert('Failed to add client: ' + (error.message || 'Please try again'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
+
+  const handleAddService = async (e) => {
+    if (e) e.preventDefault();  // Prevent default if event exists
+    
+    // Basic validation
+    if (!newService.service) {
+      alert('Please fill in required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await insertData('services', newService);
+      // Update state
+      setServices([...services, response]);
+      addNewItem(response?._id,response?.service);
+    
+      // Reset and close
+      setNewService({ service: '', description: '' });
+      setShowServiceForm(false);
+      
+    } catch (error) {
+      console.error('Error adding client:', error);
+      alert('Failed to add client: ' + (error.message || 'Please try again'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateQuotationId = (prefix = 'Q-', length = 2) => {
+    const randomNumber = Math.floor(Math.random() * Math.pow(10, length));
+    const currentYear = new Date().getFullYear();
+    const lastTwoDigits = currentYear.toString().slice(-2);
+    return prefix + String(randomNumber).padStart(length, '0') + `/${lastTwoDigits}`;
+  };
 
   return (
     <>
@@ -259,105 +316,112 @@ const handleAddClient = async (e) => {
       <div className="quotation-modal">
         <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
-        <Modal.Title>Quotation Details</Modal.Title>
+        <Modal.Title>Quotationss</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="container">
           {/* Quotation Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3 section-title">Quotation Details</h2>
-            <div className="row g-3">
-              <div className="col-md-3">
-                <Form.Group>
-                  <Form.Label>Quotation ID</Form.Label>
-                  <Form.Control type="text" value="Q34069" readOnly disabled/>
-                </Form.Group>
-              </div>
-              <div className="col-md-3">
-                <Form.Group>
-                  <Form.Label>Reference Number</Form.Label>
-                  <Form.Control type="text" 
-                    value={formData.referenceNumber}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({...formData, referenceNumber: value});
-                    }}
-                  />
-                </Form.Group>
-              </div>
-              <div className="col-md-3">
-                <Form.Group>
-                  <Form.Label>Select Status</Form.Label>
-                  <Form.Select
-                    value={formData.status}
-                    onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData({...formData, status: value});
-                      }}
-                  >
-                    <option>Select Status</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                  </Form.Select>
-                </Form.Group>
-              </div>
-              <div className="col-md-3">
-                <Form.Group>
-                  <Form.Label>Currency</Form.Label>
-                  <Form.Select 
-                  value={formData.currency}
-                    onChange={ async(e) => {
-                        const value = e.target.value;
-                        const selectedOption = e.target.options[e.target.selectedIndex];
-                        const fullCurrency = JSON.parse(selectedOption.dataset.currency);
 
-
-                        // if (!converted?.[fullCurrency?.key]) {
-                        //   // Call conversion API from previousCurrency to newCurrency
-                        //   await convertCurrency();
-                        // }
-                        setPreviousCurrency(selectedCurrency);
-
-                        setSelectedCurrency(fullCurrency);
-                        setFormData({...formData, currency: value});
-                      }}
-                      >
-                    <option>Select Currency</option>
-                    {
-                      currencies?.map(currency=>(
-                        // <option value={currency?.name} data={currency}>{currency?.name}</option>
-                        <option 
-                          key={currency.key}
-                          value={currency.name}
-                          data-currency={JSON.stringify(currency)}
-                          >
-                          {currency.name}
-                        </option>
-                      ))
-                    }
-                  </Form.Select>
-                </Form.Group>
-              </div>
-            </div>
-            <div className="row g-3 mt-2">
-              <div className="col-md-3">
-                <Form.Group>
-                  <Form.Label>Quotation Date</Form.Label>
-                  <div className="d-flex align-items-center">
-                    <Form.Control type="date" 
-                    // new Date().toISOString()
-                    value={formData.quotationDate}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData({...formData, quotationDate: value});
-                      }}
-                    />
-                    <i className="bi bi-calendar ms-2"></i>
+            <Row className='justify-content-between'>
+              <Col md={4}>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <Form.Group>
+                      <Form.Label>Quotation ID</Form.Label>
+                      <Form.Control type="text" value={generateQuotationId()} readOnly disabled/>
+                    </Form.Group>
                   </div>
-                </Form.Group>
-              </div>
-              <div className="col-md-6 d-flex align-items-center">
+                </div>
+                <div className="col-md-12 mt-3">
+                  <Form.Group>
+                    <Form.Label>Quotation Date</Form.Label>
+                    <div className="d-flex align-items-center">
+                      <Form.Control type="date" 
+                      value={formData.quotationDate}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData({...formData, quotationDate: value});
+                        }}
+                      />
+                    </div>
+                  </Form.Group>
+                </div>
+                <div className="col-md-12 mt-3">
+                  <div className="form-check">
+                    <input 
+                      className="form-check-input" 
+                      type="checkbox" 
+                      id="add-due-date"
+                      checked={addDueDate}
+                      onChange={() => toggleSwitch(setAddDueDate)}
+                    />
+                    <label className="form-check-label" htmlFor="add-due-date">Add Due Date</label>
+                  </div>
+                  {
+                    addDueDate && <div className="d-flex align-items-center">
+                    <Form.Control type="date" 
+                      value={formData.quotationDate}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData({...formData, quotationDate: value});
+                        }}
+                      />
+                  </div>
+                  }
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Select Status</Form.Label>
+                      <Form.Select
+                        value={formData.status}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setFormData({...formData, status: value});
+                          }}
+                      >
+                        <option>Select Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Currency</Form.Label>
+                      <Form.Select 
+                      value={formData.currency}
+                        onChange={ async(e) => {
+                            const value = e.target.value;
+                            const selectedOption = e.target.options[e.target.selectedIndex];
+                            const fullCurrency = JSON.parse(selectedOption.dataset.currency);
+                            setSelectedCurrency(fullCurrency);
+                            setFormData({...formData, currency: value});
+                          }}
+                          >
+                        <option>Select Currency</option>
+                        {
+                          currencies?.map(currency=>(
+                            <option 
+                              key={currency.key}
+                              value={currency.name}
+                              data-currency={JSON.stringify(currency)}
+                              >
+                              {currency.name}
+                            </option>
+                          ))
+                        }
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                </Row>
                 <div className="form-check form-switch me-3">
                   <input 
                     className="form-check-input" 
@@ -367,44 +431,28 @@ const handleAddClient = async (e) => {
                   />
                   <label className="form-check-label">Enable Tax</label>
                 </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="add-due-date"
-                    checked={addDueDate}
-                    onChange={() => toggleSwitch(setAddDueDate)}
-                  />
-                  <label className="form-check-label" htmlFor="add-due-date">Add Due Date</label>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <i className="bi bi-info-circle text-primary fs-5"></i>
-              </div>
-            </div>
+              </Col>
+            </Row>
           </div>
+          <hr/>
 
           {/* Bill From & Bill To */}
           <div className="mb-4">
-            <div className="row">
-              <div className="col-md-6">
+            <Row>
+              <Col md={6}>
+              <Card className='p-3'>
                 <h3 className="h5 mb-3">Bill From</h3>
                 <Form.Group className="mb-3">
                   <Form.Label>Billed By</Form.Label>
-                  {/* <Form.Select onChange={setSelectedCustomer}>
-                    <option>Select</option>
-                    {
-                      companies && companies?.map((company,i)=>(
-                        <option key={company?._id} value={company?.name}>{company?.name}</option>
-                      ))
-                    }
-                  </Form.Select> */}
-
+                
                   <Form.Select
                     onChange={(e) => {
                       const selectedId = e.target.value;
-                      const selected = companies.find(c => c._id === selectedId);
-                      setSelectedCompany(selected);
+                      if(selectedId && selectedId?.toLowerCase()!== "select")
+                      {
+                        const selected = companies.find(c => c._id === selectedId);
+                        setSelectedCompany(selected);
+                      }
                     }}
                   >
                     <option>Select</option>
@@ -426,23 +474,27 @@ const handleAddClient = async (e) => {
                   </div>
                 </div>
                 }
+              </Card>
                 
-              </div>
-              <div className="col-md-6">
+              </Col>
+              <Col md={6}>
+              <Card className='p-3'>
                 <h3 className="h5 mb-3">Bill To</h3>
                 <Form.Group className="mb-3">
                   <Form.Label>Customer Name</Form.Label>
                   <div className="d-flex">
                     
-
                     <Form.Select 
                       className="me-2"
                       value={formData.billedTo}
                       onChange={(e) => {
                         const selectedId = e.target.value;
-                        const selected = customers.find(c => c._id === selectedId);
-                        setSelectedCustomer(selected);
-                        setFormData({...formData, billedTo: selectedId});
+                         if(selectedId && selectedId?.toLowerCase()!== "select")
+                         {
+                          const selected = customers.find(c => c._id === selectedId);
+                          setSelectedCustomer(selected);
+                          setFormData({...formData, billedTo: selectedId});
+                         }
                       }}
                     >
                       <option>Select</option>
@@ -452,20 +504,15 @@ const handleAddClient = async (e) => {
                         </option>
                       ))}
                     </Form.Select>
-                    
+  
                   </div>
-
                   <Button 
-                    variant="outline-primary" 
+                    variant="outline-primary bg-dark text-light" 
                     size="sm"
                     onClick={() => setShowClientForm(true)}
                   >
                     ● Add New
                   </Button>
-                  {/* <SideModel/> */}
-
-                  {/* <Button variant="outline-primary" size="sm">● Add New</Button> */}
-
                 </Form.Group>
                 {
                   Object.keys(selectedCustomer).length>0
@@ -479,11 +526,11 @@ const handleAddClient = async (e) => {
                   </div>
                 </div>
                 }
-                
-              </div>
-            </div>
+                </Card>
+              </Col>
+            </Row>
           </div>
-
+          <hr/>
           {/* Items & Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3">Items & Details</h2>
@@ -505,7 +552,15 @@ const handleAddClient = async (e) => {
                   </option>
                 ))}
               </Form.Select>
+              <Button 
+                variant="outline-primary bg-dark text-light" 
+                size="sm"
+                onClick={() => setShowServiceForm(true)}
+                >
+                ● Add New
+              </Button>
             </Form.Group>
+
             <div className="table-responsive">
               <Table bordered>
                 <thead>
@@ -524,11 +579,30 @@ const handleAddClient = async (e) => {
                     <tr key={index}>
                       <td>
     
-                        <Form.Control 
+                        {/* <Form.Control 
                           type="text" 
                           value={item.name} 
                           disabled
-                        />
+                        /> */}
+
+                        <Form.Select
+                          value={item.service}
+                          onChange={(e) => {
+                            const { value, selectedOptions } = e.target;
+                            if (value && value.toLowerCase() !== "select") {
+                              // const name = selectedOptions[0]?.dataset.name;
+                              // const description = selectedOptions[0]?.dataset.description;
+                              handleItemChange(index,'service',value)
+                            }
+                          }}
+                        >
+                          <option>Select</option>
+                          {services?.map(service => (
+                            <option key={service._id} value={service._id} data-name={service.service}>
+                              {service.service}
+                            </option>
+                          ))}
+                        </Form.Select>
                         </td>
                       <td>
                         <Form.Control 
@@ -561,6 +635,13 @@ const handleAddClient = async (e) => {
                     </tr>
                   ))}
                 </tbody>
+                <Button 
+                    variant="outline-primary bg-dark text-light" 
+                    size="sm"
+                    onClick={() => addNewItem()}
+                  >
+                    ● Add New
+                </Button>
               </Table>
             </div>
           </div>
@@ -570,17 +651,17 @@ const handleAddClient = async (e) => {
             <div className="col-md-6">
               <h3 className="h5 mb-3">Extra Information</h3>
               <div className="d-flex mb-3">
-                <Button variant="primary" className="me-2">📝 Add Notes</Button>
-                <Button variant="outline-secondary" className="me-2">📄 Add Terms & Conditions</Button>
-                <Button variant="outline-secondary">🏦 Bank Details</Button>
+                {/* <Button variant="primary" className="me-2">📝 Add Notes</Button> */}
+                <Button variant="primary" className="me-2">📄 Add Terms & Conditions</Button>
+                {/* <Button variant="outline-secondary">🏦 Bank Details</Button> */}
               </div>
               <Form.Group>
-                <Form.Label>Additional Notes</Form.Label>
-                <Form.Control as="textarea" rows={3} placeholder="Enter additional notes..."
-                  value={formData.additionalNotes}
+                <Form.Label>Terms & Conditions</Form.Label>
+                <Form.Control as="textarea" rows={3} placeholder="Enter Terms & Conditions..."
+                  value={formData.termsAndConditions}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setFormData({...formData, additionalNotes: value});
+                    setFormData({...formData, termsAndConditions: value});
                   }}
                 />
               </Form.Group>
@@ -686,6 +767,14 @@ const handleAddClient = async (e) => {
         handleAddClient={handleAddClient}
         loading={loading}
       />
+      <AddService
+        show={showServiceForm}
+        onHide={() => setShowServiceForm(false)}
+        newClient={newService}
+        setNewClient={setNewService}
+        handleAddClient={handleAddService}
+        loading={loading}/>
+
       </>
   );
   

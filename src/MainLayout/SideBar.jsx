@@ -13,13 +13,13 @@ const SideBar = () => {
     { path: '/Proforma', icon: 'bi-file-earmark-text', label: 'Proforma' },
     { path: '/Invoices', icon: 'bi-receipt', label: 'Invoices' },
     { path: '/Transactions', icon: 'bi-arrow-left-right', label: 'Transactions' },
-    { path: '/', icon: 'bi-bar-chart', label: 'Reports',
-        subMenu:[
-            {path:'/Sales',label:'Sales Report'},
-            {path:'/Users',label:'User Report'},
-            {path:'/Activity',label:'Activity Log'},
-        ]
-     },
+    // { path: '/', icon: 'bi-bar-chart', label: 'Reports',
+    //     subMenu:[
+    //         {path:'/Sales',label:'Sales Report'},
+    //         {path:'/Users',label:'User Report'},
+    //         {path:'/Activity',label:'Activity Log'},
+    //     ]
+    //  },
   ];
 
 

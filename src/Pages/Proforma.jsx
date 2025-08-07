@@ -261,7 +261,7 @@ function Proforma() {
                                 <tr>
                                     <th><input className="form-check-input" type="checkbox" id="select-all"/></th>
                                     <th>Proforma ID</th>
-                                    <th>Company</th>
+                                    {/* <th>Company</th> */}
                                     <th>Client</th>
                                     <th>Created On</th>
                                     <th>Status</th>
@@ -276,7 +276,7 @@ function Proforma() {
                                         <tr key={proforma._id || i}>
                                             <td><input className="form-check-input row-checkbox" type="checkbox"/></td>
                                             <td>{proforma?.quotationId}</td>
-                                            <td>{proforma?.billedBy?.name}</td>
+                                            {/* <td>{proforma?.billedBy?.name}</td> */}
                                             <td>{proforma?.billedTo?.name}</td>
                                             <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
                                             <td>
