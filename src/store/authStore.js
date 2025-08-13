@@ -11,6 +11,12 @@ export const useAuthStore = create((set, get) => ({
   userRole:null,
   loading:true,
   quotation:null,
+  showMenuLabel:true,
+
+  changeShowMenuLabel: () => {
+    const currentState = get().showMenuLabel;
+    set({ showMenuLabel: !currentState });
+  },
 
   checkAuth: async () => {
     try {
@@ -21,6 +27,7 @@ export const useAuthStore = create((set, get) => ({
           isLoggedIn: true,
           userRole:response.user.role
         });
+        await get().loadQuotation();
         const invoiceStore = useInvoiceStore.getState();
         await invoiceStore.getInvoices(); 
       } else {
@@ -36,7 +43,7 @@ export const useAuthStore = create((set, get) => ({
   loadQuotation: async () =>{
     try {
         const res = await fetchData('quotation');
-        console.log(res)
+        // console.log(res)
         set({quotation:res || []})
 
     } catch (error) {
@@ -85,7 +92,6 @@ export const useAuthStore = create((set, get) => ({
       return;
     }
     await get().checkAuth();
-    await get().loadQuotation();
     set({ loading: false });
     }
 }));

@@ -148,7 +148,6 @@ export default function SignInForm() {
                     onClick={handleSubmit}
                   >
                     {loading ? 'Logging in...' : 'Login'}
-                    Sign In
                   </button>
                 </div>
               </div>

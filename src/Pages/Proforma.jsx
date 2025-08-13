@@ -10,7 +10,6 @@ import ToInvoice from '../Components/Proforma/ToInvoice';
 function Proforma() {
     const [showModal, setShowModal] = useState(false);
     const [showChangeToInvoice, setShowChangeToInvoice] = useState(false);
-    const [proformas, setProformas] = useState([]);
     // Fixed: Combined duplicate state variables
     const [selectedQuotation, setSelectedQuotation] = useState({});
     const [showViewModal, setShowViewModal] = useState(false);

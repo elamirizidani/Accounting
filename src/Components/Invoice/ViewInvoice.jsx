@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
 import siteLogo from '../../assets/imgs/logo.png'
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import moment from 'moment';
-import usePDFGenerator from '../../../hooks/usePDFGenerator';
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 
 const ViewInvoice = ({ show, handleClose, invoice }) => {
   const componentRef = React.useRef();
-  const { generatePDF, isGeneratingPDF } = usePDFGenerator();
-// console.log(invoice)
+console.log('invoice',invoice)
 
   const numberToWords = (num) => {
     

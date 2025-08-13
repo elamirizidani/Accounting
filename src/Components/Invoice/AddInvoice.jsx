@@ -6,9 +6,13 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
+import { useInvoiceStore } from '../../store/invoiceStore';
+import { useAuthStore } from '../../store/authStore';
 
 
 const AddInvoice = ({ show, handleClose,invoice = {} }) => {
+  const {getInvoices} = useInvoiceStore()
+  const {loadQuotation} = useAuthStore()
   const currencies = useMemo(() => [
     {
       name:'USD',
@@ -230,8 +234,10 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
 // console.log(JSON.stringify(payload))
 
     const response = await insertData('invoice',payload);
-    alert('Quotation created successfully!');
-    console.log(response);
+    alert('Invoice created successfully!');
+    getInvoices()
+    loadQuotation()
+    // console.log(response);
 
     // Optionally reset form or close modal
     handleClose();

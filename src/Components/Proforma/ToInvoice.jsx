@@ -4,6 +4,7 @@ import '../create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
+import { useInvoiceStore } from '../../store/invoiceStore';
 
 
 const ToInvoice = ({ show, handleClose,quotation = {} }) => {
@@ -25,7 +26,7 @@ const ToInvoice = ({ show, handleClose,quotation = {} }) => {
       cName:'Rwandan Franc'
     }
   ], [])
-
+const {getInvoices} = useInvoiceStore()
   const [enableTax, setEnableTax] = useState(true);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
   const [items, setItems] = useState(quotation?.items ||[]);
@@ -191,7 +192,8 @@ const [invoiceData,setInvoiceData] =useState({
     console.log(JSON.stringify(payload))
 
     const response = await insertData('invoice',payload);
-    alert('Quotation created successfully!');
+    getInvoices()
+    alert('Invoice created successfully!');
     console.log(response);
 
     // Optionally reset form or close modal
