@@ -4,33 +4,25 @@ import { deleteData, fetchData } from '../../utility/api';
 import { Nav } from 'react-bootstrap';
 import moment from 'moment';
 import ViewQuatation from '../Components/Proforma/ViewQuatation';
+import { useAuthStore } from '../store/authStore';
+import ToInvoice from '../Components/Proforma/ToInvoice';
 
 function Proforma() {
     const [showModal, setShowModal] = useState(false);
+    const [showChangeToInvoice, setShowChangeToInvoice] = useState(false);
     const [proformas, setProformas] = useState([]);
     // Fixed: Combined duplicate state variables
     const [selectedQuotation, setSelectedQuotation] = useState({});
     const [showViewModal, setShowViewModal] = useState(false);
-
-    const readProforma = async () => {
-        try {
-            const res = await fetchData('quotation');
-            setProformas(res || []);
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    useEffect(() => {
-        readProforma();
-    }, []);
+    const {quotation,loadQuotation} = useAuthStore()
+   
 
     const deleteQuotation = async (id) => {
         try {
             const res = await deleteData('quotation', id);
             if (res.status === 200) {
                 alert(res.data.message);
-                readProforma();
+                loadQuotation();
             }
         } catch (error) {
             console.log(error);
@@ -155,6 +147,10 @@ function Proforma() {
         setSelectedQuotation(proforma);
         setShowModal(true);
     };
+    const handleChangeToInvoice = (proforma={}) => {
+        setSelectedQuotation(proforma);
+        setShowChangeToInvoice(true);
+    };
 
     return (
         <>
@@ -263,13 +259,14 @@ function Proforma() {
                                     <th>Proforma ID</th>
                                     {/* <th>Company</th> */}
                                     <th>Client</th>
+                                    <th>Amount</th>
                                     <th>Created On</th>
                                     <th>Status</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody">
-                                {proformas?.map((proforma, i) => {
+                                {quotation?.map((proforma, i) => {
                                     const statusColor = proforma.status === 'Accepted' ? '#28a745' : 
                                                        proforma?.status === 'Pending' ? '#ffc107' : '#dc3545';
                                     return (
@@ -278,6 +275,7 @@ function Proforma() {
                                             <td>{proforma?.quotationId}</td>
                                             {/* <td>{proforma?.billedBy?.name}</td> */}
                                             <td>{proforma?.billedTo?.name}</td>
+                                            <td>{proforma?.totalAmount} {proforma?.currency}</td>
                                             <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
                                             <td>
                                                 <span className="status-badge" style={{backgroundColor: `${statusColor}20`, color: statusColor}}>
@@ -290,36 +288,50 @@ function Proforma() {
                                                     popoverTarget={`export-${i}`} 
                                                     id={`exportBtn${proforma?._id}`}
                                                     type='button' 
-                                                    className="actions-btn information">⋯</button>
+                                                    className="btn btn-sm btn-link text-muted actions-btn information">
+                                                      <i className="bi bi-three-dots"></i></button>
                                                 <div 
                                                     className='popoverInfo'
                                                     id={`export-${i}`} 
                                                     popover='auto' 
                                                     anchor={`exportBtn${proforma?._id}`}>
                                                     <Nav className="flex-column">
-                                                        <Nav.Item onClick={(e) => {
+                                                        <Nav.Item
+                                                        className='d-flex gap-2'
+                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleView(proforma);
                                                         }}>
+                                                            <i class="bi bi-eye"></i>
                                                             <span>View</span>
                                                         </Nav.Item>
-                                                        <Nav.Item onClick={(e) => {
+                                                        <Nav.Item className='d-flex gap-2' onClick={(e) => {
                                                             e.stopPropagation();
                                                             exportQuotation(proforma);
                                                         }}>
+                                                            <i class="bi bi-printer"></i>
                                                             <span>Print</span>
                                                         </Nav.Item>
-                                                        <Nav.Item onClick={(e) => {
+                                                        <Nav.Item className='d-flex gap-2' onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleEdit(proforma);
                                                         }}>
+                                                            <i class="bi bi-pencil-square"></i>
                                                             <span>Edit</span>
                                                         </Nav.Item>
-                                                        <Nav.Item onClick={(e) => {
+                                                        <Nav.Item className='d-flex gap-2' onClick={(e) => {
                                                             e.stopPropagation();
                                                             deleteQuotation(proforma?._id);
                                                         }}>
+                                                            <i class="bi bi-trash3"></i>
                                                             <span>Delete</span>
+                                                        </Nav.Item>
+                                                        <Nav.Item className='d-flex gap-2' onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleChangeToInvoice(proforma);
+                                                        }}>
+                                                            <i class="bi bi-receipt"></i>
+                                                            <span>Convert to Invoice</span>
                                                         </Nav.Item>
                                                     </Nav>
                                                 </div>
@@ -357,6 +369,11 @@ function Proforma() {
                 handleClose={() => setShowModal(false)} 
                 quotation={selectedQuotation}
             />
+            <ToInvoice
+                show={showChangeToInvoice} 
+                handleClose={() => setShowChangeToInvoice(false)} 
+                quotation={selectedQuotation}
+                />
 
             <ViewQuatation
                 show={showViewModal}

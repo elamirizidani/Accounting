@@ -4,12 +4,9 @@ import '../create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
-import ClientFormModal from '../ReUsable/ClientFormModal';
-import AddService from '../ReUsable/AddService';
-import { useAuthStore } from '../../store/authStore';
 
 
-const QuotationModal = ({ show, handleClose,quotation = {} }) => {
+const ToInvoice = ({ show, handleClose,quotation = {} }) => {
   const currencies = useMemo(() => [
     {
       name:'USD',
@@ -30,7 +27,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   ], [])
 
   const [enableTax, setEnableTax] = useState(true);
-  const [addDueDate, setAddDueDate] = useState(false);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
   const [items, setItems] = useState(quotation?.items ||[]);
   const [customers,setCustomers] = useState([])
@@ -44,55 +40,31 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const {loadQuotation} = useAuthStore()
+const [invoiceData,setInvoiceData] =useState({
+    invoiceDate:'',
+    dueDate:'',
+    paymentTerms:'',
+    paymentMethod:'',
+    notes:'',
+    status:'',
+  })
 
   useEffect(() => {
   if (quotation) {
     setFormData({
       ...quotation,
-      items: quotation?.items || [],
-      enableTax: quotation?.enableTax ?? true,
-      roundOffTotal: quotation?.roundOffTotal ?? true
+      items: quotation.items || [],
+      enableTax: quotation.enableTax ?? true,
+      roundOffTotal: quotation.roundOffTotal ?? true
     });
+    
     setEnableTax(quotation?.enableTax)
-    setItems(quotation?.items || []);
-    setSelectedCustomer(quotation?.billedTo || {});
-    setSelectedCompany(quotation?.billedBy || {});
+    setItems(quotation.items || []);
+    setSelectedCustomer(quotation.billedTo || {});
+    setSelectedCompany(quotation.billedBy || {});
     setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency) || {});
   }
 }, [quotation,currencies]);
-
-
-  
-  const [newClient, setNewClient] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    email: ''
-  });
-  const [newService, setNewService] = useState({
-    service: '',
-    description: ''
-  });
-
-
-  // const [formData, setFormData] = useState(quotation ||{
-  //   billedBy: '',
-  //   billedTo: '',
-  //   quotationDate:'',
-  //   currency:'',
-  //   status:'',
-  //   additionalNotes:'',
-  //   referenceNumber:'',
-  //   enableTax: true,
-  //   items: [{
-  //     service: '',
-  //     description: '',
-  //     quantity: 1,
-  //     unitCost: 0,
-  //     vat: 18,
-  //   }]
-  // });
 
 
   const [formData, setFormData] = useState({
@@ -177,7 +149,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     // const sgst = enableTax ? amount * 0.09 : 0;
     const total = amount + vat;
     const roundedTotal = roundOffTotal ? Math.round(total) : total;
-    
+
     return { amount, vat, total: roundedTotal };
   };
 
@@ -211,28 +183,18 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     setLoading(true);
 
     const payload = {
-      billedBy: selectedCompany?._id,
-      billedTo: selectedCustomer?._id,
-      currency:formData.currency,
-      status:formData.status,
-      termsConditions:formData.termsConditions,
-      referenceNumber:formData.referenceNumber,
-      items: items,
-      enableTax,
-      roundOffTotal,
-      totalAmount:total,
-      quotationDate: formData.quotationDate,
-      reference: 'REF-123456', // you can also get this from an input
-      notes: '', // can bind to form state if needed
+      quotation:quotation?._id,
+      totalAmount:quotation?.totalAmount,
+      ...invoiceData,
     };
 
+    console.log(JSON.stringify(payload))
 
-    const response = await insertData('quotation',payload);
+    const response = await insertData('invoice',payload);
     alert('Quotation created successfully!');
-    // console.log(response);
+    console.log(response);
 
     // Optionally reset form or close modal
-    loadQuotation()
     handleClose();
   } catch (err) {
     console.log(err)
@@ -242,135 +204,59 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   }
 };
 
-
-
-  const handleAddClient = async (e) => {
-    if (e) e.preventDefault();  // Prevent default if event exists
-    
-    // Basic validation
-    if (!newClient.name || !newClient.email) {
-      alert('Please fill in required fields');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await insertData('customers', newClient);
-      
-      // Update state
-      setCustomers([...customers, response]);
-      setSelectedCustomer(response);
-      setFormData({...formData, billedTo: response._id});
-      
-      // Reset and close
-      setNewClient({ name: '', address: '', phone: '', email: '' });
-      setShowClientForm(false);
-      
-    } catch (error) {
-      console.error('Error adding client:', error);
-      alert('Failed to add client: ' + (error.message || 'Please try again'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-  const handleAddService = async (e) => {
-    if (e) e.preventDefault();  // Prevent default if event exists
-    
-    // Basic validation
-    if (!newService.service) {
-      alert('Please fill in required fields');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await insertData('services', newService);
-      // Update state
-      setServices([...services, response]);
-      addNewItem(response?._id,response?.service);
-    
-      // Reset and close
-      setNewService({ service: '', description: '' });
-      setShowServiceForm(false);
-      
-    } catch (error) {
-      console.error('Error adding client:', error);
-      alert('Failed to add client: ' + (error.message || 'Please try again'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // const generateQuotationId = (prefix = 'Q-', length = 2) => {
-  //   const randomNumber = Math.floor(Math.random() * Math.pow(10, length));
-  //   const currentYear = new Date().getFullYear();
-  //   const lastTwoDigits = currentYear.toString().slice(-2);
-  //   return prefix + String(randomNumber).padStart(length, '0') + `/${lastTwoDigits}`;
-  // };
-
   return (
     <>
     <Modal show={show} onHide={showClientForm ? () => {} : handleClose}  size="xl" centered>
       <div className="quotation-modal">
         <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
-        <Modal.Title>PROFORMA</Modal.Title>
+        <Modal.Title>INVOICE</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="container">
           {/* Quotation Details */}
           <div className="mb-4">
-            <h2 className="h5 mb-3 section-title">PROFORMA Details</h2>
+            <h2 className="h5 mb-3 section-title">INVOICE Details</h2>
 
             <Row className='justify-content-between'>
               <Col md={4}>
                 {/* <div className="row g-3">
                   <div className="col-md-6">
                     <Form.Group>
-                      <Form.Label>PROFORMA ID</Form.Label>
+                      <Form.Label>INVOICE N<sup>o</sup></Form.Label>
                       <Form.Control type="text" value={generateQuotationId()} readOnly disabled/>
                     </Form.Group>
                   </div>
                 </div> */}
                 <div className="col-md-12 mt-3">
                   <Form.Group>
-                    <Form.Label>PROFORMA Date</Form.Label>
+                    <Form.Label>INVOICE Date</Form.Label>
                     <div className="d-flex align-items-center">
                       <Form.Control type="date" 
-                      value={formData.quotationDate}
+                      required
+                      value={invoiceData.invoiceDate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData({...formData, quotationDate: value});
+                          setInvoiceData({...invoiceData, invoiceDate: value});
                         }}
                       />
                     </div>
                   </Form.Group>
                 </div>
                 <div className="col-md-12 mt-3">
-                  <div className="form-check">
-                    <input 
-                      className="form-check-input" 
-                      type="checkbox" 
-                      id="add-due-date"
-                      checked={addDueDate}
-                      onChange={() => toggleSwitch(setAddDueDate)}
-                    />
-                    <label className="form-check-label" htmlFor="add-due-date">Add Due Date</label>
-                  </div>
-                  {
-                    addDueDate && <div className="d-flex align-items-center">
-                    <Form.Control type="date" 
-                      value={formData.quotationDate}
+                  <Form.Group>
+                    <Form.Label>Due Date</Form.Label>
+                    <div className="d-flex align-items-center">
+                      <Form.Control type="date" 
+                      required
+                      value={invoiceData.dueDate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData({...formData, quotationDate: value});
+                          setInvoiceData({...invoiceData, dueDate: value});
                         }}
                       />
-                  </div>
-                  }
+                    </div>
+                  </Form.Group>                  
                 </div>
               </Col>
 
@@ -380,50 +266,42 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                     <Form.Group>
                       <Form.Label>Select Status</Form.Label>
                       <Form.Select
-                        value={formData.status}
+                        value={invoiceData.status}
                         onChange={(e) => {
                             const value = e.target.value;
-                            setFormData({...formData, status: value});
+                            setInvoiceData({...invoiceData, status: value});
                           }}
                       >
                         <option>Select Status</option>
                         <option value="draft">Draft</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="cancelled">Cancelled</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
 
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label>Currency</Form.Label>
-                      <Form.Select 
-                      value={formData.currency}
-                        onChange={ async(e) => {
+                      <Form.Label>Payment Mode</Form.Label>
+                      <Form.Select
+                        value={invoiceData.paymentMethod}
+                        onChange={(e) => {
                             const value = e.target.value;
-                            const selectedOption = e.target.options[e.target.selectedIndex];
-                            const fullCurrency = JSON.parse(selectedOption.dataset.currency);
-                            setSelectedCurrency(fullCurrency);
-                            setFormData({...formData, currency: value});
+                            setInvoiceData({...invoiceData, paymentMethod: value});
                           }}
-                          >
-                        <option>Select Currency</option>
-                        {
-                          currencies?.map(currency=>(
-                            <option 
-                              key={currency.key}
-                              value={currency.name}
-                              data-currency={JSON.stringify(currency)}
-                              >
-                              {currency.name}
-                            </option>
-                          ))
-                        }
+                      >
+                        <option>Select</option>
+                        <option value="cash">Cash</option>
+                        <option value="check">Check</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
+
+                  
                 </Row>
-                <div className="form-check form-switch me-3">
+                {/* <div className="form-check form-switch me-3">
                   <input 
                     className="form-check-input" 
                     type="checkbox" 
@@ -431,7 +309,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                     onChange={() => toggleSwitch(setEnableTax)}
                   />
                   <label className="form-check-label">Enable Tax</label>
-                </div>
+                </div> */}
               </Col>
             </Row>
           </div>
@@ -443,18 +321,11 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
               <Col md={6}>
               <Card className='p-3'>
                 <h3 className="h5 mb-3">Bill From</h3>
-                <Form.Group className="mb-3">
+                {/* <Form.Group className="mb-3">
                   <Form.Label>Billed By</Form.Label>
                 
                   <Form.Select
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      if(selectedId && selectedId?.toLowerCase()!== "select")
-                      {
-                        const selected = companies.find(c => c._id === selectedId);
-                        setSelectedCompany(selected);
-                      }
-                    }}
+                    disabled
                   >
                     <option>Select</option>
                     {companies?.map((company) => (
@@ -463,7 +334,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                       </option>
                     ))}
                   </Form.Select>
-                </Form.Group>
+                </Form.Group> */}
                 {
                  Object.keys(selectedCompany)?.length>0  && 
                   <div className="p-3 bg-light rounded">
@@ -481,22 +352,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
               <Col md={6}>
               <Card className='p-3'>
                 <h3 className="h5 mb-3">Bill To</h3>
-                <Form.Group className="mb-3">
+                {/* <Form.Group className="mb-3">
                   <Form.Label>Customer Name</Form.Label>
                   <div className="d-flex">
                     
                     <Form.Select 
                       className="me-2"
                       value={formData.billedTo}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                         if(selectedId && selectedId?.toLowerCase()!== "select")
-                         {
-                          const selected = customers.find(c => c._id === selectedId);
-                          setSelectedCustomer(selected);
-                          setFormData({...formData, billedTo: selectedId});
-                         }
-                      }}
+                      disabled
                     >
                       <option>Select</option>
                       {customers?.map((customer) => (
@@ -507,14 +370,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                     </Form.Select>
   
                   </div>
-                  <Button 
-                    variant="outline-primary bg-dark text-light" 
-                    size="sm"
-                    onClick={() => setShowClientForm(true)}
-                  >
-                    ● Add New
-                  </Button>
-                </Form.Group>
+                </Form.Group> */}
                 {
                   Object.keys(selectedCustomer).length>0
                    &&
@@ -535,7 +391,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
           {/* Items & Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3">Items & Details</h2>
-            <Form.Group className="mb-3">
+            {/* <Form.Group className="mb-3">
               <Form.Label>Services</Form.Label>
               <Form.Select
                 onChange={(e) => {
@@ -560,7 +416,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                 >
                 ● Add New
               </Button>
-            </Form.Group>
+            </Form.Group> */}
 
             <div className="table-responsive">
               <Table bordered>
@@ -587,6 +443,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                         /> */}
 
                         <Form.Select
+                        disabled
                           value={item.service}
                           onChange={(e) => {
                             const { value, selectedOptions } = e.target;
@@ -608,22 +465,22 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                       <td>
                         <Form.Control 
                           type="text" 
+                          disabled
                           value={item.description}
-                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                         />
                       </td>
                       <td>
                         <Form.Control 
                           type="number" 
                           value={item.quantity} 
-                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                          disabled
                         />
                       </td>
                       <td>
                         <Form.Control 
                           type="number" 
                           value={item.unitCost} 
-                          onChange={(e) => handleItemChange(index, 'unitCost', e.target.value)}
+                          disabled
                         />
                       </td>
                       {/* <td>{item.vat}</td> */}
@@ -636,14 +493,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                     </tr>
                   ))}
                 </tbody>
-              </Table>
-                <Button 
+                {/* <Button 
                     variant="outline-primary bg-dark text-light" 
                     size="sm"
                     onClick={() => addNewItem()}
                   >
                     ● Add New
-                </Button>
+                </Button> */}
+              </Table>
             </div>
           </div>
 
@@ -652,17 +509,17 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
             <div className="col-md-6">
               <h3 className="h5 mb-3">Extra Information</h3>
               <div className="d-flex mb-3">
-                {/* <Button variant="primary" className="me-2">📝 Add Notes</Button> */}
-                <Button variant="primary" className="me-2">📄 Add Terms & Conditions</Button>
+                <Button variant="primary" className="me-2">📝 Add Notes</Button>
+                {/* <Button variant="primary" className="me-2">📄 Add Terms & Conditions</Button> */}
                 {/* <Button variant="outline-secondary">🏦 Bank Details</Button> */}
               </div>
               <Form.Group>
-                <Form.Label>Terms & Conditions</Form.Label>
-                <Form.Control as="textarea" rows={3} placeholder="Enter Terms & Conditions..."
-                  value={formData.termsConditions}
+                <Form.Label>Additional notes</Form.Label>
+                <Form.Control as="textarea" rows={3} placeholder="Enter Additional notes..."
+                  value={invoiceData.notes}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setFormData({...formData, termsConditions: value});
+                    setInvoiceData({...invoiceData, notes: value});
                   }}
                 />
               </Form.Group>
@@ -686,11 +543,11 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   </>
                 )}
                 {/* <Button variant="outline-primary" className="w-100 mb-3">● Add Additional Charges</Button> */}
-                <div className="d-flex justify-content-between mb-2">
+                {/* <div className="d-flex justify-content-between mb-2">
                   <span>Discount</span>
                   <span>0%</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2 align-items-center">
+                </div> */}
+                {/* <div className="d-flex justify-content-between mb-2 align-items-center">
                   <div className="form-check form-switch">
                     <input 
                       className="form-check-input" 
@@ -701,7 +558,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                     <label className="form-check-label">Round Off Total</label>
                   </div>
                   <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(total.toFixed(2)).toLocaleString()}</span>
-                </div>
+                </div> */}
                 <div className="d-flex justify-content-between mb-2 fw-bold">
                   <span>Total (USD)</span>
                   <span>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {Number(total.toFixed(2)).toLocaleString()}</span>
@@ -751,7 +608,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   Creating...
                 </>
               ) : (
-                'Save Quotation'
+                'Save Invoice'
               )}
             </Button>
 
@@ -760,21 +617,21 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
       </div>
     </Modal>
     {/* <ClientFormModal key={Date.now()}/> */}
-    <ClientFormModal
+    {/* <ClientFormModal
         show={showClientForm}
         onHide={() => setShowClientForm(false)}
         newClient={newClient}
         setNewClient={setNewClient}
         handleAddClient={handleAddClient}
         loading={loading}
-      />
-      <AddService
+      /> */}
+      {/* <AddService
         show={showServiceForm}
         onHide={() => setShowServiceForm(false)}
         newClient={newService}
         setNewClient={setNewService}
         handleAddClient={handleAddService}
-        loading={loading}/>
+        loading={loading}/> */}
 
       </>
   );
@@ -782,7 +639,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 };
 
 
-export default QuotationModal;
+export default ToInvoice;
 
 
 

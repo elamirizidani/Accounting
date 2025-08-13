@@ -6,10 +6,9 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
-import { useAuthStore } from '../../store/authStore';
 
 
-const QuotationModal = ({ show, handleClose,quotation = {} }) => {
+const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   const currencies = useMemo(() => [
     {
       name:'USD',
@@ -32,35 +31,35 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   const [enableTax, setEnableTax] = useState(true);
   const [addDueDate, setAddDueDate] = useState(false);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
-  const [items, setItems] = useState(quotation?.items ||[]);
+  const [items, setItems] = useState(invoice?.items ||[]);
   const [customers,setCustomers] = useState([])
   const [companies,setCompanies] = useState([])
   const [services,setServices] = useState([])
-  const [selectedCustomer,setSelectedCustomer] = useState(quotation?.billedTo||{})
-  const [selectedCompany,setSelectedCompany] = useState(quotation?.billedBy||{})
-  const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === quotation?.currency)||{})
+  const [selectedCustomer,setSelectedCustomer] = useState(invoice?.billedTo||{})
+  const [selectedCompany,setSelectedCompany] = useState(invoice?.billedBy||{})
+  const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === invoice?.currency)||{})
 
   const [showClientForm, setShowClientForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const {loadQuotation} = useAuthStore()
+
 
   useEffect(() => {
-  if (quotation) {
+  if (invoice) {
     setFormData({
-      ...quotation,
-      items: quotation?.items || [],
-      enableTax: quotation?.enableTax ?? true,
-      roundOffTotal: quotation?.roundOffTotal ?? true
+      ...invoice,
+      items: invoice.items || [],
+      enableTax: invoice.enableTax ?? true,
+      roundOffTotal: invoice.roundOffTotal ?? true
     });
-    setEnableTax(quotation?.enableTax)
-    setItems(quotation?.items || []);
-    setSelectedCustomer(quotation?.billedTo || {});
-    setSelectedCompany(quotation?.billedBy || {});
-    setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency) || {});
+    
+    setItems(invoice.items || []);
+    setSelectedCustomer(invoice.billedTo || {});
+    setSelectedCompany(invoice.billedBy || {});
+    setSelectedCurrency(currencies.find(currency => currency?.name === invoice?.currency) || {});
   }
-}, [quotation,currencies]);
+}, [invoice,currencies]);
 
 
   
@@ -76,10 +75,10 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   });
 
 
-  // const [formData, setFormData] = useState(quotation ||{
+  // const [formData, setFormData] = useState(invoice ||{
   //   billedBy: '',
   //   billedTo: '',
-  //   quotationDate:'',
+  //   invoiceDate:'',
   //   currency:'',
   //   status:'',
   //   additionalNotes:'',
@@ -96,10 +95,10 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 
 
   const [formData, setFormData] = useState({
-    ...quotation,
-    items: quotation?.items || [],
-    enableTax: quotation?.enableTax ?? true,
-    roundOffTotal: quotation?.roundOffTotal ?? true
+    ...invoice,
+    items: invoice?.items || [],
+    enableTax: invoice?.enableTax ?? true,
+    roundOffTotal: invoice?.roundOffTotal ?? true
   })
 
 
@@ -214,25 +213,27 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
       billedBy: selectedCompany?._id,
       billedTo: selectedCustomer?._id,
       currency:formData.currency,
-      status:formData.status,
+      status:'approved',
+      invoiceStatus:formData.status,
       termsConditions:formData.termsConditions,
       referenceNumber:formData.referenceNumber,
       items: items,
       enableTax,
       roundOffTotal,
       totalAmount:total,
-      quotationDate: formData.quotationDate,
-      reference: 'REF-123456', // you can also get this from an input
-      notes: '', // can bind to form state if needed
+      invoiceDate: formData?.quotationDate,
+      paymentMethod:formData?.paymentMethod || 'cash',
+      reference: 'REF-123456', 
+      notes: '',
     };
 
+// console.log(JSON.stringify(payload))
 
-    const response = await insertData('quotation',payload);
+    const response = await insertData('invoice',payload);
     alert('Quotation created successfully!');
-    // console.log(response);
+    console.log(response);
 
     // Optionally reset form or close modal
-    loadQuotation()
     handleClose();
   } catch (err) {
     console.log(err)
@@ -304,40 +305,33 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     }
   };
 
-  // const generateQuotationId = (prefix = 'Q-', length = 2) => {
-  //   const randomNumber = Math.floor(Math.random() * Math.pow(10, length));
-  //   const currentYear = new Date().getFullYear();
-  //   const lastTwoDigits = currentYear.toString().slice(-2);
-  //   return prefix + String(randomNumber).padStart(length, '0') + `/${lastTwoDigits}`;
-  // };
-
   return (
     <>
     <Modal show={show} onHide={showClientForm ? () => {} : handleClose}  size="xl" centered>
       <div className="quotation-modal">
         <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
-        <Modal.Title>PROFORMA</Modal.Title>
+        <Modal.Title>INVOICE</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="container">
           {/* Quotation Details */}
           <div className="mb-4">
-            <h2 className="h5 mb-3 section-title">PROFORMA Details</h2>
+            <h2 className="h5 mb-3 section-title">INVOICE Details</h2>
 
             <Row className='justify-content-between'>
               <Col md={4}>
                 {/* <div className="row g-3">
                   <div className="col-md-6">
                     <Form.Group>
-                      <Form.Label>PROFORMA ID</Form.Label>
+                      <Form.Label>INVOICE ID</Form.Label>
                       <Form.Control type="text" value={generateQuotationId()} readOnly disabled/>
                     </Form.Group>
                   </div>
                 </div> */}
                 <div className="col-md-12 mt-3">
                   <Form.Group>
-                    <Form.Label>PROFORMA Date</Form.Label>
+                    <Form.Label>INVOICE Date</Form.Label>
                     <div className="d-flex align-items-center">
                       <Form.Control type="date" 
                       value={formData.quotationDate}
@@ -388,8 +382,10 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                       >
                         <option>Select Status</option>
                         <option value="draft">Draft</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
+                        <option value="unpaid">Unpaid</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="cancelled">Cancelled</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
@@ -421,17 +417,37 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                         }
                       </Form.Select>
                     </Form.Group>
+                  </Col> 
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Payment Mode</Form.Label>
+                      <Form.Select
+                        value={formData.paymentMethod}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setFormData({...formData, paymentMethod: value});
+                          }}
+                      >
+                        <option>Select</option>
+                        <option value="cash">Cash</option>
+                        <option value="check">Check</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                  <Col md="6">
+                    <div className="form-check form-switch me-3">
+                      <input 
+                        className="form-check-input" 
+                        type="checkbox" 
+                        checked={enableTax}
+                        onChange={() => toggleSwitch(setEnableTax)}
+                      />
+                      <label className="form-check-label">Enable Tax</label>
+                    </div>
                   </Col>
                 </Row>
-                <div className="form-check form-switch me-3">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    checked={enableTax}
-                    onChange={() => toggleSwitch(setEnableTax)}
-                  />
-                  <label className="form-check-label">Enable Tax</label>
-                </div>
+
+                
               </Col>
             </Row>
           </div>
@@ -579,20 +595,11 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   {items.map((item, index) => (
                     <tr key={index}>
                       <td>
-    
-                        {/* <Form.Control 
-                          type="text" 
-                          value={item.name} 
-                          disabled
-                        /> */}
-
                         <Form.Select
                           value={item.service}
                           onChange={(e) => {
-                            const { value, selectedOptions } = e.target;
+                            const { value } = e.target;
                             if (value && value.toLowerCase() !== "select") {
-                              // const name = selectedOptions[0]?.dataset.name;
-                              // const description = selectedOptions[0]?.dataset.description;
                               handleItemChange(index,'service',value)
                             }
                           }}
@@ -637,7 +644,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   ))}
                 </tbody>
               </Table>
-                <Button 
+              <Button 
                     variant="outline-primary bg-dark text-light" 
                     size="sm"
                     onClick={() => addNewItem()}
@@ -782,7 +789,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 };
 
 
-export default QuotationModal;
+export default AddInvoice;
 
 
 

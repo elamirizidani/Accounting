@@ -70,7 +70,7 @@ function Home() {
                         <h3 className="stat-value">25,225,000</h3>
                         </div>
                         <div className="stat-icon orange">
-                           <img src="./assets/image/2.svg" alt=""/>
+                           <img src="./assets/image/4.svg" alt=""/>
                         </div>
                     </div>
                         <div className="stat-change d-flex justify-content-center py-2"><span>
@@ -85,11 +85,11 @@ function Home() {
                         <h3 className="stat-value">200</h3>
                         </div>
                         <div className="stat-icon blue">
-                           <img src="./assets/image/3.svg" alt=""/>
+                           <img src="./assets/image/4.svg" alt=""/>
                         </div>
                     </div>
                         <div className="stat-change d-flex justify-content-center py-2"><span style={{color: "#1B8CCA"}}>
-                            <img src="./assets/image/5.svg" alt=""/>
+                            <img src="./assets/image/4.svg" alt=""/>
                             7.45%</span> from last month</div>
                     
                 </div>

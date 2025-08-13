@@ -3,27 +3,14 @@ import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
 import siteLogo from '../../assets/imgs/logo.png'
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import moment from 'moment';
+import usePDFGenerator from '../../../hooks/usePDFGenerator';
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 
-const ViewQuatation = ({ show, handleClose, quotation }) => {
+const ViewInvoice = ({ show, handleClose, invoice }) => {
   const componentRef = React.useRef();
-const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  const calculateTotals = () => {
-    const amount = quotation?.items?.reduce((sum, item) => sum + (item.total || 0), 0);
-    const vat =  amount * 0.18;
-    // const sgst = enableTax ? amount * 0.09 : 0;
-    const total = amount + vat;
-    
-    return { amount, vat, total: total };
-  };
-
-  const { amount, vat, total } = calculateTotals();
+  const { generatePDF, isGeneratingPDF } = usePDFGenerator();
+// console.log(invoice)
 
   const numberToWords = (num) => {
     
@@ -39,7 +26,6 @@ const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
     return num; // Simplified - would need more logic for larger numbers
   };
   
-
 const handlePDFSuccess = (result) => {
     console.log('PDF generated successfully:', result.filename);
   };
@@ -51,7 +37,7 @@ const handlePDFSuccess = (result) => {
 
   // Print only the modal body content
   const handlePrintToPDF = () => {
-    if (!quotation) {
+    if (!invoice) {
       alert('No quotation data available');
       return;
     }
@@ -78,7 +64,7 @@ const handlePDFSuccess = (result) => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Quotation ${quotation?.quotationId || ''}</title>
+          <title>Invoice ${invoice?.invoiceNumber || ''}</title>
           <style>
             ${styleSheets}
             @media print {
@@ -114,8 +100,8 @@ const handlePDFSuccess = (result) => {
       </Modal.Header> */}
       <Modal.Body>
         <div className="quotation-modal">
-        {!quotation ? (
-          <div className="alert alert-info my-5">PROFORMA not found</div>
+        {!invoice ? (
+          <div className="alert alert-info my-5">INVOICE not found</div>
         ) : (
           <div ref={componentRef} className="print-section bg-white p-4">
             {/* Header Section */}
@@ -125,11 +111,11 @@ const handlePDFSuccess = (result) => {
               </div>
 
               <div className="text-start">
-                <h4 className="mb-1">{quotation?.billedBy?.name || 'Company Name'}</h4>
-                {/* <p className="text-muted mb-1"><strong>Address:</strong> {quotation?.billedBy?.address}</p> */}
-                <p className="fw-bold mb-1"><strong>Phone:</strong> {quotation?.billedBy?.phone}</p>
-                <p className="fw-bold mb-1"><strong>Email:</strong> {quotation?.billedBy?.email}</p>
-                {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
+                <h4 className="mb-1">{invoice?.quotation?.billedBy?.name || 'Company Name'}</h4>
+                {/* <p className="text-muted mb-1"><strong>Address:</strong> {invoice?.quotation?.billedBy?.address}</p> */}
+                <p className="fw-bold mb-1"><strong>Phone:</strong> {invoice?.quotation?.billedBy?.phone}</p>
+                <p className="fw-bold mb-1"><strong>Email:</strong> {invoice?.quotation?.billedBy?.email}</p>
+                {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
               </div>
             </div>
 
@@ -137,21 +123,21 @@ const handlePDFSuccess = (result) => {
             <div className="d-flex justify-content-between mb-4">
               <div className=' mt-3'>
                 <div className='bordered-left px-2'>
-                  <h4 className="mb-1 colored-text">PROFORMA TO</h4>
-                  <h3 className="fw-bold mb-1">{quotation?.billedTo?.name}</h3>
+                  <h4 className="mb-1 colored-text">INVOICE TO</h4>
+                  <h3 className="fw-bold mb-1">{invoice?.quotation?.billedTo?.name}</h3>
                 </div>
               </div>
               
               <div className="text-start  mt-3">
-                <h2 className="colored-text"><strong>N<sup>o</sup>: </strong> {quotation?.quotationId}</h2>
-                {/* <p className="fw-bold mb-1"><strong>N<sup>o</sup>: </strong> {quotation?.quotationId}</p> */}
-                <p className="fw-bold mb-1"><strong>Date:</strong> {formatDate(quotation?.quotationDate)}</p>
-                {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
+                <h2 className="colored-text"><strong>N<sup>o</sup>: </strong> {invoice?.invoiceNumber}</h2>
+                <p className="fw-bold mb-1"><strong>Due date: </strong> {moment(invoice?.dueDate).format('DD MMM YYYY')}</p>
+                <p className="fw-bold mb-1"><strong>Date:</strong> {moment(invoice?.invoiceDate).format('DD MMM YYYY')}</p>
+                {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
               </div>
             </div>
 
             <p className="text-muted">
-              Reference to your proforma request, {quotation?.billedBy?.name} proposes the following:
+              Reference to your proforma {invoice?.quotation?.quotationId} request {invoice?.quotation?.billedBy?.name} proposes the following:
             </p>
             {/* Items Table */}
             <div className="table-responsive">
@@ -163,11 +149,11 @@ const handlePDFSuccess = (result) => {
                     <th width="35%">Description</th>
                     <th width="10%" className="text-end">Qty</th>
                     <th width="10%" className="text-end">Unit Price</th>
-                    <th width="15%" className="text-end">Total ({quotation?.currency})</th>
+                    <th width="15%" className="text-end">Total ({invoice?.quotation?.currency})</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {quotation?.items?.map((item, index) => (
+                  {invoice?.quotation?.items?.map((item, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td>{item?.service?.service}</td>
@@ -184,13 +170,13 @@ const handlePDFSuccess = (result) => {
               <Col md={8} className='mt-4'>
                 <div className='bordered-left px-2'>
                   <h6 className="mb-1 colored-text">TOTAL IN WORDS:</h6>
-                  <h6 className="fw-bold mb-1">{numberToWords(quotation?.totalAmount)}</h6>
+                  <h6 className="fw-bold mb-1">{numberToWords(invoice?.totalAmount)}</h6>
                 </div>
               </Col>
               <Col>
               <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
                 <span>Total:</span>
-              <span>{quotation?.currency} {quotation?.totalAmount}</span>
+              <span>{invoice?.quotation?.currency} {invoice?.totalAmount}</span>
               </div>
               
               </Col>
@@ -206,7 +192,7 @@ const handlePDFSuccess = (result) => {
                       <td><strong>Subtotal</strong></td>
                       <td className="text-end">{amount?.toFixed(2) || '0.00'}</td>
                     </tr>
-                    {quotation?.enableTax && (
+                    {invoice?.quotation?.enableTax && (
                       <tr>
                         <td><strong>VAT (18%)</strong></td>
                         <td className="text-end">{vat?.toFixed(2) || '0.00'}</td>
@@ -216,10 +202,10 @@ const handlePDFSuccess = (result) => {
                       <td><strong>Total Amount</strong></td>
                       <td className="text-end"><strong>{total?.toFixed(2) || '0.00'}</strong></td>
                     </tr>
-                    {quotation?.roundOffTotal && quotation?.roundOffDifference && (
+                    {invoice?.quotation?.roundOffTotal && invoice?.quotation?.roundOffDifference && (
                       <tr>
                         <td><strong>Round Off</strong></td>
-                        <td className="text-end">{quotation?.roundOffDifference.toFixed(2)}</td>
+                        <td className="text-end">{invoice?.quotation?.roundOffDifference.toFixed(2)}</td>
                       </tr>
                     )}
                   </tbody>
@@ -233,16 +219,16 @@ const handlePDFSuccess = (result) => {
             </div>
 
             {/* Terms and Conditions */}
-            {quotation?.termsAndConditions && (
+            {invoice?.quotation?.termsAndConditions && (
               <div className="mt-4">
                 <h5 className="mb-2">Terms & Conditions</h5>
-                <div className="text-muted" dangerouslySetInnerHTML={{ __html: quotation?.termsAndConditions }} />
+                <div className="text-muted" dangerouslySetInnerHTML={{ __html: invoice?.quotation?.termsAndConditions }} />
               </div>
             )}
 
             <p className="text-muted text-center">
               <small style={{color:'rgba(0, 0, 0, 0.15)'}}>
-                THIS IS A CUMPUTED PROFORMA BY {quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
+                THIS IS A CUMPUTED PROFORMA BY {invoice?.quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
               </small>
             </p>
 
@@ -257,7 +243,7 @@ const handlePDFSuccess = (result) => {
                 </Col>
                 <Col md={6}>
                   <div className="border-top pt-3 text-end">
-                    <p className="mb-1"><strong>For {quotation?.billedBy?.name || 'Company Name'}</strong></p>
+                    <p className="mb-1"><strong>For {invoice?.quotation?.billedBy?.name || 'Company Name'}</strong></p>
                     <p className="text-muted">Authorized Signature</p>
                   </div>
                 </Col>
@@ -279,7 +265,7 @@ const handlePDFSuccess = (result) => {
         </Button> */}
         <PDFDownloadButton
           targetRef={componentRef}
-          filename={`Quotation_${quotation?.quotationId || 'Unknown'}_${quotation?.billedTo?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Customer'}.pdf`}
+          filename={`Invoice_${invoice?.invoiceNumber || 'Unknown'}_${invoice?.quotation?.billedTo?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Customer'}.pdf`}
           buttonText="Download PDF"
           variant="primary"
           onSuccess={handlePDFSuccess}
@@ -297,4 +283,4 @@ const handlePDFSuccess = (result) => {
   );
 };
 
-export default ViewQuatation;
+export default ViewInvoice;
