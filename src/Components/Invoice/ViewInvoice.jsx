@@ -212,6 +212,24 @@ const handlePDFSuccess = (result) => {
             {/* Amount in Words */}
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
+              <Table>
+                <tr>
+                  <td className='p-1'><strong>Bank Name:</strong></td>
+                  <td className='p-1'><strong>Bank of Kigali</strong></td>
+                </tr>
+                <tr>
+                  <td className='p-1'><strong>Account Name:</strong></td>
+                  <td className='p-1'><strong>SYMBOLIX Ltd</strong></td>
+                </tr>
+                <tr>
+                  <td className='p-1'><strong>Account No:</strong></td>
+                  <td className='p-1'><strong>100089237666</strong></td>
+                </tr>
+                <tr>
+                  <td className='p-1'><strong>Swift Code</strong></td>
+                  <td className='p-1'><strong>BKIGRWRW</strong></td>
+                </tr>
+              </Table>
             </div>
 
             {/* Terms and Conditions */}
