@@ -48,6 +48,7 @@ const [invoiceData,setInvoiceData] =useState({
     paymentMethod:'',
     notes:'',
     status:'',
+    extraEmail:''
   })
 
   useEffect(() => {
@@ -354,25 +355,7 @@ const [invoiceData,setInvoiceData] =useState({
               <Col md={6}>
               <Card className='p-3'>
                 <h3 className="h5 mb-3">Bill To</h3>
-                {/* <Form.Group className="mb-3">
-                  <Form.Label>Customer Name</Form.Label>
-                  <div className="d-flex">
-                    
-                    <Form.Select 
-                      className="me-2"
-                      value={formData.billedTo}
-                      disabled
-                    >
-                      <option>Select</option>
-                      {customers?.map((customer) => (
-                        <option key={customer._id} value={customer._id}>
-                          {customer.name}
-                        </option>
-                      ))}
-                    </Form.Select>
-  
-                  </div>
-                </Form.Group> */}
+                
                 {
                   Object.keys(selectedCustomer).length>0
                    &&
@@ -385,6 +368,20 @@ const [invoiceData,setInvoiceData] =useState({
                   </div>
                 </div>
                 }
+
+                <Form.Group className="mb-3">
+                                    <Form.Label>Someone else to notify</Form.Label>
+                                    <Form.Control 
+                                      type="email" 
+                                      value={invoiceData.extraEmail}
+                                      name='email'
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        setInvoiceData({...invoiceData, extraEmail: value});
+                                      }}
+                                    />
+                                  </Form.Group>
+
                 </Card>
               </Col>
             </Row>

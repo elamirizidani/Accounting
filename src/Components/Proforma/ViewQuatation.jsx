@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
-import siteLogo from '../../assets/imgs/logo.png'
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import siteLogo from '../../assets/imgs/agencyLogo.png'
+import barndMark from '../../assets/imgs/brandmark.png'
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 
 const ViewQuatation = ({ show, handleClose, quotation }) => {
   const componentRef = React.useRef();
-const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const calculateTotals = () => {
-    const amount = quotation?.items?.reduce((sum, item) => sum + (item.total || 0), 0);
-    const vat =  amount * 0.18;
-    // const sgst = enableTax ? amount * 0.09 : 0;
-    const total = amount + vat;
+  // const calculateTotals = () => {
+  //   const amount = quotation?.items?.reduce((sum, item) => sum + (item.total || 0), 0);
+  //   const vat =  amount * 0.18;
+  //   // const sgst = enableTax ? amount * 0.09 : 0;
+  //   const total = amount + vat;
     
-    return { amount, vat, total: total };
-  };
+  //   return { amount, vat, total: total };
+  // };
 
-  const { amount, vat, total } = calculateTotals();
+  // const { amount, vat, total } = calculateTotals();
 
   const numberToWords = (num) => {
     
@@ -85,6 +83,20 @@ const handlePDFSuccess = (result) => {
               body { margin: 0; padding: 20px; }
               .no-print { display: none !important; }
               .modal-header, .modal-footer { display: none !important; }
+              body::before{
+              content: "";
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-image: url(${barndMark});
+              background-repeat: repeat;
+              background-position: center;
+              background-size: contain;
+              opacity: 0.1;
+              pointer-events: none;
+            }
             }
           </style>
         </head>
@@ -117,7 +129,7 @@ const handlePDFSuccess = (result) => {
         {!quotation ? (
           <div className="alert alert-info my-5">PROFORMA not found</div>
         ) : (
-          <div ref={componentRef} className="print-section bg-white p-4">
+          <div ref={componentRef} className="print-section p-4" style={{backgroundColor:'transparent'}}>
             {/* Header Section */}
             <div className="d-flex justify-content-between ">
               <div className="col-md-3">
@@ -127,7 +139,7 @@ const handlePDFSuccess = (result) => {
               <div className="text-start">
                 <h4 className="mb-1">{quotation?.billedBy?.name || 'Company Name'}</h4>
                 {/* <p className="text-muted mb-1"><strong>Address:</strong> {quotation?.billedBy?.address}</p> */}
-                <p className="fw-bold mb-1"><strong>Phone:</strong> {quotation?.billedBy?.phone}</p>
+                <p className="fw-bold mb-1"><strong>TIN:</strong> {quotation?.billedBy?.tinNumber}</p>
                 <p className="fw-bold mb-1"><strong>Email:</strong> {quotation?.billedBy?.email}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
               </div>
@@ -160,10 +172,18 @@ const handlePDFSuccess = (result) => {
                   <tr>
                     <th width="5%">#</th>
                     <th width="25%">Service</th>
-                    <th width="35%">Description</th>
-                    <th width="10%" className="text-end">Qty</th>
-                    <th width="10%" className="text-end">Unit Price</th>
-                    <th width="15%" className="text-end">Total ({quotation?.currency})</th>
+                    <th width="30%">Description</th>
+                    <th width="5%" className="text-end">Qty</th>
+                    <th width="15%" className="text-end">Unit Price ({quotation?.currency})</th>
+                    {
+                    quotation?.enableTax &&
+                      <th width="10%" className="text-end">VAT ({quotation?.currency})</th>
+                    }
+                    <th width="10%" className="text-end">Total ({quotation?.currency})</th>
+
+
+                    
+
                   </tr>
                 </thead>
                 <tbody>
@@ -174,7 +194,16 @@ const handlePDFSuccess = (result) => {
                       <td>{item?.description}</td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toFixed(2)}</td>
-                      <td className="text-end">{item?.total?.toFixed(2)}</td>
+                      {
+                        quotation?.enableTax ?
+                        <>
+                          <td className="text-end"> {Number(item?.total*18)/100}</td>
+                          <td className="text-end">{Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)}</td>
+                        </>
+                      :
+                      <td className="text-end"> {item?.total}</td>
+                      }
+
                     </tr>
                   ))}
                 </tbody>
@@ -188,9 +217,23 @@ const handlePDFSuccess = (result) => {
                 </div>
               </Col>
               <Col>
+{/* 
+              {
+                quotation?.enableTax &&
+                <>
+                  <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
+                    <span>VAT:</span>
+                    <span>{quotation?.currency} {(quotation?.totalAmount*18)/100}</span>
+                  </div>
+                  <div className='bg-dark text-light align-items-center d-flex justify-content-between px-3 py-2'>
+                    <span>Total:</span>
+                    <span>{quotation?.currency} {quotation?.totalAmount - (quotation?.totalAmount*18)/100}</span>
+                  </div>
+                </>
+              } */}
               <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
                 <span>Total:</span>
-              <span>{quotation?.currency} {quotation?.totalAmount}</span>
+                <span>{quotation?.currency} {quotation?.totalAmount}</span>
               </div>
               
               </Col>

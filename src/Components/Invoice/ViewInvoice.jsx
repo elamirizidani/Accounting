@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
-import siteLogo from '../../assets/imgs/logo.png'
+import siteLogo from '../../assets/imgs/agencyLogo.png'
+import barndMark from '../../assets/imgs/brandmark.png'
 import moment from 'moment';
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 
@@ -99,7 +100,7 @@ const handlePDFSuccess = (result) => {
         {!invoice ? (
           <div className="alert alert-info my-5">INVOICE not found</div>
         ) : (
-          <div ref={componentRef} className="print-section bg-white p-4">
+          <div ref={componentRef} className="print-section p-4" style={{backgroundColor:'transparent'}}>
             {/* Header Section */}
             <div className="d-flex justify-content-between ">
               <div className="col-md-3">
@@ -109,7 +110,7 @@ const handlePDFSuccess = (result) => {
               <div className="text-start">
                 <h4 className="mb-1">{invoice?.quotation?.billedBy?.name || 'Company Name'}</h4>
                 {/* <p className="text-muted mb-1"><strong>Address:</strong> {invoice?.quotation?.billedBy?.address}</p> */}
-                <p className="fw-bold mb-1"><strong>Phone:</strong> {invoice?.quotation?.billedBy?.phone}</p>
+                <p className="fw-bold mb-1"><strong>TIN:</strong> {invoice?.quotation?.billedBy?.tinNumber}</p>
                 <p className="fw-bold mb-1"><strong>Email:</strong> {invoice?.quotation?.billedBy?.email}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
               </div>
@@ -142,10 +143,15 @@ const handlePDFSuccess = (result) => {
                   <tr>
                     <th width="5%">#</th>
                     <th width="25%">Service</th>
-                    <th width="35%">Description</th>
-                    <th width="10%" className="text-end">Qty</th>
-                    <th width="10%" className="text-end">Unit Price</th>
-                    <th width="15%" className="text-end">Total ({invoice?.quotation?.currency})</th>
+                    <th width="30%">Description</th>
+                    <th width="5%" className="text-end">Qty</th>
+                    <th width="15%" className="text-end">Unit Price ({invoice?.quotation?.currency})</th>
+                    {
+                    invoice?.quotation?.enableTax &&
+                      <th width="10%" className="text-end">VAT ({invoice?.quotation?.currency})</th>
+                    }
+                    
+                    <th width="10%" className="text-end">Total ({invoice?.quotation?.currency})</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,7 +162,15 @@ const handlePDFSuccess = (result) => {
                       <td>{item?.description}</td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toFixed(2)}</td>
-                      <td className="text-end">{item?.total?.toFixed(2)}</td>
+                      {
+                        invoice?.quotation?.enableTax ?
+                        <>
+                          <td className="text-end"> {Number(item?.total*18)/100}</td>
+                          <td className="text-end">{Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)}</td>
+                        </>
+                      :
+                      <td className="text-end"> {item?.total}</td>
+                      }
                     </tr>
                   ))}
                 </tbody>
@@ -170,10 +184,26 @@ const handlePDFSuccess = (result) => {
                 </div>
               </Col>
               <Col>
+              
+              {/* {
+                invoice?.quotation?.enableTax &&
+                <>
+                  <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
+                    <span>VAT:</span>
+                    <span>{invoice?.quotation?.currency} {(invoice?.totalAmount*18)/100}</span>
+                  </div>
+                  <div className='bg-dark text-light align-items-center d-flex justify-content-between px-3 py-2'>
+                    <span>Total:</span>
+                    <span>{invoice?.quotation?.currency} {invoice?.totalAmount - (invoice?.totalAmount*18)/100}</span>
+                  </div>
+                </>
+              } */}
+              
               <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
-                <span>Total:</span>
-              <span>{invoice?.quotation?.currency} {invoice?.totalAmount}</span>
+                <span>Amount due:</span>
+                <span>{invoice?.quotation?.currency} {invoice?.totalAmount}</span>
               </div>
+              
               
               </Col>
             </Row>

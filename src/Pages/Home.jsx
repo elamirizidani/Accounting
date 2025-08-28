@@ -1,6 +1,13 @@
 import React from 'react'
+import { useInvoiceStore } from '../store/invoiceStore';
+import moment from 'moment';
+import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 function Home() {
+    const {invoices} = useInvoiceStore()
+    const {quotation} = useAuthStore()
+
   return (
     <>
     <div className="main-header">
@@ -88,20 +95,17 @@ function Home() {
                            <img src="./assets/image/4.svg" alt=""/>
                         </div>
                     </div>
-                        <div className="stat-change d-flex justify-content-center py-2"><span style={{color: "#1B8CCA"}}>
-                            <img src="./assets/image/4.svg" alt=""/>
-                            7.45%</span> from last month</div>
-                    
+                    <div className="stat-change d-flex justify-content-center py-2">
+                        <span style={{color: "#1B8CCA"}}><img src="./assets/image/4.svg" alt=""/>7.45%</span> from last month
+                    </div>
                 </div>
-               
             </div>
 
             <div className="tables-row">
-                
                 <div className="table-section">
                     <div className="table-header">
                         <h5 className="table-title">Recent Invoices</h5>
-                        <a href="#" className="view-all">View All</a>
+                        <Link to="/Invoices" className="view-all">View All</Link>
                     </div>
                     <table className="data-table">
                         <thead>
@@ -113,48 +117,25 @@ function Home() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Bank Of Kigali</td>
-                                <td className="amount">1700000</td>
-                                <td>04 Mar 2025</td>
-                                <td><span className="status-badge status-paid">Paid</span></td>
-                            </tr>
-                            <tr>
-                                <td>Equity Bank PLC</td>
-                                <td className="amount">2,225,750</td>
-                                <td>07 Feb 2025</td>
-                                <td><span className="status-badge status-pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td>Shelima</td>
-                                <td className="amount">130500</td>
-                                <td>02 Nov 2024</td>
-                                <td><span className="status-badge status-overdue">Overdue</span></td>
-                            </tr>
-                            <tr>
-                                <td>Skol Brewery</td>
-                                <td className="amount">750,300</td>
-                                <td>26 Oct 2024</td>
-                                <td><span className="status-badge status-sent">Sent</span></td>
-                            </tr>
-                            <tr>
-                                <td>Kirscel Cassava</td>
-                                <td className="amount">639,899</td>
-                                <td>18 Oct 2024</td>
-                                <td><span className="status-badge status-sent">Sent</span></td>
-                            </tr>
-                            <tr>
-                                <td>RSLA</td>
-                                <td className="amount">2,639,660</td>
-                                <td>22 Sep 2024</td>
-                                <td><span className="status-badge status-sent">Sent</span></td>
-                            </tr>
-                            <tr>
-                                <td>Namiho</td>
-                                <td className="amount">2,309,620</td>
-                                <td>05 Sep 2024</td>
-                                <td><span className="status-badge status-sent">Sent</span></td>
-                            </tr>
+                            {
+                                invoices?.map((invoice,i)=>(
+                                    <tr key={i}>
+                                        <td>{invoice?.quotation?.billedTo?.name}</td>
+                                        <td className="amount">{invoice.totalAmount} {invoice?.quotation?.currency}</td>
+                                        <td>{moment(invoice.dueDate).format('DD MMM YYYY')}</td>
+                                        <td>
+                                            <span className="status-badge">
+                                                {invoice.status}
+                                                {invoice.status === 'Paid' && <i className="bi bi-check-circle ms-1"></i>}
+                                                {invoice.status === 'Overdue' && <i className="bi bi-exclamation-triangle ms-1"></i>}
+                                                {invoice.status === 'Partially Paid' && <i className="bi bi-hourglass-split ms-1"></i>}
+                                                {invoice.status === 'Unpaid' && <i className="bi bi-clock ms-1"></i>}
+                                                {invoice.status === 'Draft' && <i className="bi bi-file-text ms-1"></i>}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -162,7 +143,7 @@ function Home() {
                 <div className="table-section">
                     <div className="table-header">
                         <h5 className="table-title">Recent Proforma</h5>
-                        <a href="#" className="view-all">View All</a>
+                        <Link to="/Proforma" className="view-all">View All</Link>
                     </div>
                     <table className="data-table">
                         <thead>
@@ -172,34 +153,15 @@ function Home() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Bank Of Kigali</td>
-                                <td className="amount">1800000</td>
-                            </tr>
-                            <tr>
-                                <td>Equity Bank PLC</td>
-                                <td className="amount">2,225,750</td>
-                            </tr>
-                            <tr>
-                                <td>Shelima</td>
-                                <td className="amount">130500</td>
-                            </tr>
-                            <tr>
-                                <td>Skol Brewery</td>
-                                <td className="amount">750,300</td>
-                            </tr>
-                            <tr>
-                                <td>Kirscel Cassava</td>
-                                <td className="amount">635,099</td>
-                            </tr>
-                            <tr>
-                                <td>RSLA</td>
-                                <td className="amount">2,639,660</td>
-                            </tr>
-                            <tr>
-                                <td>Namiho</td>
-                                <td className="amount">2,309,620</td>
-                            </tr>
+                            {
+                                quotation?.map((q,i)=>(
+                                    <tr key={i}>
+                                        <td>{q?.billedTo?.name}</td>
+                                        <td className="amount">{q?.totalAmount} {q?.currency}</td>
+                                    </tr>
+                                ))
+                            }
+                            
                         </tbody>
                     </table>
                 </div>

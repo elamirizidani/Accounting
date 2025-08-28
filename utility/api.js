@@ -21,6 +21,7 @@ api.interceptors.request.use(config => {
 
 export async function login(email, password) {
   const res = await api.post('auth/login', { email:email, password:password });
+  console.log(res)
   if (res.status === 200 && res.data.token) {
     localStorage.setItem('token', res.data.token);
   }

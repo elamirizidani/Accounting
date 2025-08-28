@@ -53,8 +53,10 @@ export const useAuthStore = create((set, get) => ({
   
   login: async (userData) => {
     try {
+
+      // console.log('userData',userData)
         const response = await apiLogin(userData.email, userData.password);
-        console.log(response)
+        // console.log('response on store',response)
         if (response.token) {
           localStorage.setItem('token', response.token);
           await get().checkAuth();
