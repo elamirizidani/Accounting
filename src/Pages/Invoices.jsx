@@ -14,7 +14,9 @@ const Invoices = () => {
     partiallyPaidInvoice,
     unpaidInvoice,
     sentInvoice,
-    draftInvoice} = useInvoiceStore()
+    draftInvoice,
+    allInvoiceData
+  } = useInvoiceStore()
 
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,7 +122,10 @@ const getStatusBadge = (status) => {
               </div>
               <hr className="vertical-line"/>
               <small className="text-success">
-                  <i className="bi bi-arrow-up"></i>5.62% from last month
+                  <i className="bi bi-arrow-up"></i>
+                  {
+                    Number(allInvoiceData?.monthlyStatusChanges?.paid)/100
+                  } from last month
               </small>
             </div>
           </div>
@@ -140,7 +145,10 @@ const getStatusBadge = (status) => {
               </div>
               <hr className="vertical-line"/>
               <small className="text-success">
-                  <i className="bi bi-arrow-up"></i> 5.62% from last month
+                  <i className="bi bi-arrow-up"></i> 
+                  {
+                    Number(allInvoiceData?.monthlyStatusChanges?.npaid)/100
+                  } from last month
               </small>
             </div>
           </div>
@@ -307,13 +315,13 @@ const getStatusBadge = (status) => {
                                 <i class="bi bi-trash3"></i>
                                 <span>Delete</span>
                             </Nav.Item>
-                            <Nav.Item className='d-flex gap-2' onClick={(e) => {
+                            {/* <Nav.Item className='d-flex gap-2' onClick={(e) => {
                                 e.stopPropagation();
                                 // handleChangeToInvoice(invoice);
                             }}>
                                 <i class="bi bi-receipt"></i>
                                 <span>Convert to Invoice</span>
-                            </Nav.Item>
+                            </Nav.Item> */}
                         </Nav>
                       </div>
                     </td>

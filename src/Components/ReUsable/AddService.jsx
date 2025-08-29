@@ -39,6 +39,16 @@ const AddService = ({
     
           <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">
+                    <Form.Label>Service Code</Form.Label>
+                    <Form.Control 
+                      type="text" 
+                      name="code"
+                      value={localClient.code}
+                        onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
                     <Form.Label>Name</Form.Label>
                     <Form.Control 
                       type="text" 

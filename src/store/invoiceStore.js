@@ -11,13 +11,15 @@ export const useInvoiceStore = create((set,get)=>({
     sentInvoice: null,
     draftInvoice:null,
     totalInvoice:null,
+    allInvoiceData:{},
 
     getInvoices:async()=>{
         try {
             const res = await fetchData("invoice");
-            console.log('invoice',res)
+            // console.log('invoice',res)
                 set({
                     loadingInvoice:false,
+                    allInvoiceData:res,
                     invoices:Array.isArray(res?.invoices) ? res?.invoices : [],
                     paidInvoice: res?.statusCounts?.paid || null,
                     overdueInvoice: res?.statusCounts?.overdue || null,

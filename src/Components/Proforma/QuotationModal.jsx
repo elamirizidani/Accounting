@@ -72,7 +72,8 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   });
   const [newService, setNewService] = useState({
     service: '',
-    description: ''
+    description: '',
+    code:''
   });
 
 

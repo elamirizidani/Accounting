@@ -75,7 +75,8 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   });
   const [newService, setNewService] = useState({
     service: '',
-    description: ''
+    description: '',
+    code:''
   });
 
 

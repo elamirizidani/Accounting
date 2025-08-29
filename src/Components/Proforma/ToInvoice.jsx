@@ -440,9 +440,9 @@ const [invoiceData,setInvoiceData] =useState({
                           value={item.name} 
                           disabled
                         /> */}
-
-                        <Form.Select
-                        disabled
+                          {item?.service?.service}
+                        {/* <Form.Select
+                          disabled
                           value={item.service}
                           onChange={(e) => {
                             const { value, selectedOptions } = e.target;
@@ -459,28 +459,31 @@ const [invoiceData,setInvoiceData] =useState({
                               {service.service}
                             </option>
                           ))}
-                        </Form.Select>
+                        </Form.Select> */}
                         </td>
                       <td>
-                        <Form.Control 
+                        {item.description}
+                        {/* <Form.Control 
                           type="text" 
                           disabled
                           value={item.description}
-                        />
+                        /> */}
                       </td>
                       <td>
-                        <Form.Control 
+                        {item.quantity}
+                        {/* <Form.Control 
                           type="number" 
                           value={item.quantity} 
                           disabled
-                        />
+                        /> */}
                       </td>
                       <td>
-                        <Form.Control 
+                        {item.unitCost}
+                        {/* <Form.Control 
                           type="number" 
                           value={item.unitCost} 
                           disabled
-                        />
+                        /> */}
                       </td>
                       {/* <td>{item.vat}</td> */}
                       <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td>

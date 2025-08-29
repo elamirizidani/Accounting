@@ -171,39 +171,40 @@ const handlePDFSuccess = (result) => {
                 <thead className="thead-dark">
                   <tr>
                     <th width="5%">#</th>
-                    <th width="25%">Service</th>
-                    <th width="30%">Description</th>
+                    <th width="15%">Service Code</th>
+                    <th width="20%">Service</th>
+                    {/* <th width="30%">Description</th> */}
                     <th width="5%" className="text-end">Qty</th>
-                    <th width="15%" className="text-end">Unit Price ({quotation?.currency})</th>
+                    <th width="15%" className="text-end">Unit Price</th>
                     {
                     quotation?.enableTax &&
-                      <th width="10%" className="text-end">VAT ({quotation?.currency})</th>
+                    <>
+                      <th width="5%" className="text-end">VAT</th>
+                      <th width="5%" className="text-end">Tax %</th>
+                    </>
                     }
-                    <th width="10%" className="text-end">Total ({quotation?.currency})</th>
-
-
-                    
-
+                    <th width="10%" className="text-end">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {quotation?.items?.map((item, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
+                      <td>{item?.service?.code}</td>
                       <td>{item?.service?.service}</td>
-                      <td>{item?.description}</td>
+                      {/* <td>{item?.description}</td> */}
                       <td className="text-end">{item?.quantity}</td>
-                      <td className="text-end">{item?.unitCost?.toFixed(2)}</td>
+                      <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {
                         quotation?.enableTax ?
                         <>
-                          <td className="text-end"> {Number(item?.total*18)/100}</td>
-                          <td className="text-end">{Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)}</td>
+                          <td className="text-end">{(Number(item?.total*18)/100).toLocaleString()}</td>
+                          <td className="text-end">18%</td>
+                          <td className="text-end">{(Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)).toLocaleString()}</td>
                         </>
                       :
-                      <td className="text-end"> {item?.total}</td>
+                      <td className="text-end">{item?.total.toLocaleString()}</td>
                       }
-
                     </tr>
                   ))}
                 </tbody>
@@ -233,7 +234,7 @@ const handlePDFSuccess = (result) => {
               } */}
               <div className='bg-dark text-light align-items-center d-flex justify-content-between p-3'>
                 <span>Total:</span>
-                <span>{quotation?.currency} {quotation?.totalAmount}</span>
+                <span>{quotation?.currency} {Number(quotation?.totalAmount).toLocaleString()}</span>
               </div>
               
               </Col>
@@ -332,9 +333,9 @@ const handlePDFSuccess = (result) => {
         <Button variant="outline-secondary" onClick={handleClose}>
           Close
         </Button>
-        <Button variant="outline-primary" onClick={handlePrintToPDF} className="me-2">
+        {/* <Button variant="outline-primary" onClick={handlePrintToPDF} className="me-2">
           Print
-        </Button>
+        </Button> */}
         {/* <Button variant="primary" onClick={handleDownloadPDF}>
           Download PDF
         </Button> */}
