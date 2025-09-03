@@ -86,24 +86,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   });
 
 
-  // const [formData, setFormData] = useState(quotation ||{
-  //   billedBy: '',
-  //   billedTo: '',
-  //   quotationDate:'',
-  //   currency:'',
-  //   status:'',
-  //   additionalNotes:'',
-  //   referenceNumber:'',
-  //   enableTax: true,
-  //   items: [{
-  //     service: '',
-  //     description: '',
-  //     quantity: 1,
-  //     unitCost: 0,
-  //     vat: 18,
-  //   }]
-  // });
-
 
   const [formData, setFormData] = useState({
     ...quotation,
@@ -301,7 +283,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     }
   };
 
-
+const AddServiceCode = async (e)=>{
+  if (e) e.preventDefault();
+  try {
+    const res = await insertData('services',)
+  } catch (error) {
+    
+  }
+}
 
   const handleAddService = async (e) => {
     if (e) e.preventDefault();  // Prevent default if event exists
@@ -691,7 +680,9 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                         />
                       </td>
                       <td>{item.vat}</td>
-                      <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td>
+                      {/* <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td> */}
+                      <td className="text-end">{(Number(item?.quantity * item?.unitCost) + Number(item?.quantity * item?.unitCost * 0.18)).toLocaleString()}</td>
+
                       <td>
                         <Button variant="link" onClick={() => deleteItem(index)}>
                           <i className="bi bi-trash"></i>

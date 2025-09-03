@@ -8,7 +8,7 @@ export const useServicesStore = create((set, get) => ({
   getServiceCodes: async () => {
     try {
       const res = await fetchData("services/serviceCodes");
-      console.log('ServiceCodes', res);
+      // console.log('ServiceCodes', res);
       set({
         loadingCodes: false,
         serviceCodes: res
