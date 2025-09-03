@@ -1,6 +1,7 @@
 import React,{useState} from 'react';
 import { Button, Nav } from 'react-bootstrap';
-import siteLogo from '../assets/imgs/logo.svg'
+import siteLogo from '../assets/imgs/agencyLogo.png'
+import phoneLogo from '../assets/imgs/phoneLogo.png'
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
@@ -13,6 +14,7 @@ const SideBar = () => {
     { path: '/', icon: 'bi-speedometer2', label: 'Dashboard',isLink:true },
     { path: '/Proforma', icon: 'bi-file-earmark-text', label: 'Proforma',isLink:true },
     { path: '/Invoices', icon: 'bi-receipt', label: 'Invoices',isLink:true },
+    { path: '/Clients', icon: 'bi-receipt', label: 'Clients',isLink:true },
     { path: '/Transactions', icon: 'bi-arrow-left-right', label: 'Transactions',isLink:true },
     { path: '/logout', icon: 'bi-door-closed', label: 'Logout',isLink:false,fnToCall:logout },
     // { path: '/', icon: 'bi-bar-chart', label: 'Reports',
@@ -36,7 +38,12 @@ const SideBar = () => {
   return (
       <div className={`sidebar ${showMenuLabel? 'p-3':'p-1'} `} id="sidebar" style={{ width: showMenuLabel ? '250px':'70px' }}>
         <div className="logo">
-            <img src={siteLogo} alt=""/>
+          {
+            showMenuLabel ?
+            <img src={siteLogo} alt="" style={{}}/>
+            :
+            <img src={phoneLogo} alt="" style={{width:'30px'}}/>
+          }
         </div>
         <Nav className="flex-column text-white" >
     

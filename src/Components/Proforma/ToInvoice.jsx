@@ -157,19 +157,32 @@ const [invoiceData,setInvoiceData] =useState({
 
   const { amount, vat, total } = calculateTotals();
 
-  const numberToWords = (num) => {
-    
-    const words = [
-      'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-    ];
-    const tens = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
-    if (num < 20) return words[num];
-    if (num < 100) return tens[Math.floor(num/10)-2] + (num%10 ? ' ' + words[num%10] : '');
-    if (num < 1000) return words[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' and ' + numberToWords(num%100) : '');
-    return num; // Simplified - would need more logic for larger numbers
-  };
+  function numberToWords(num) {
+  if (num === 0) return "zero";
+
+  const below20 = ["", "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["", "", "Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  function helper(n) {
+    if (n === 0) return "";
+    else if (n < 20) return below20[n] + " ";
+    else if (n < 100) return tens[Math.floor(n/10)] + " " + helper(n%10);
+    else return below20[Math.floor(n/100)] + " hundred " + helper(n%100);
+  }
+
+  let res = "";
+  let i = 0;
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      res = helper(num % 1000) + thousands[i] + " " + res;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+  return res.trim();
+}
 
   // useEffect(()=>{
   //   console.log(selectedCompany)
@@ -297,7 +310,7 @@ const [invoiceData,setInvoiceData] =useState({
                       >
                         <option>Select</option>
                         <option value="cash">Cash</option>
-                        <option value="check">Check</option>
+                        <option value="cheque">Cheque</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>

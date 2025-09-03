@@ -274,7 +274,7 @@ function Proforma() {
                                             <td>{proforma?.quotationId}</td>
                                             {/* <td>{proforma?.billedBy?.name}</td> */}
                                             <td>{proforma?.billedTo?.name}</td>
-                                            <td>{proforma?.totalAmount} {proforma?.currency}</td>
+                                            <td>{Number(proforma?.totalAmount).toLocaleString()} {proforma?.currency}</td>
                                             <td>{moment(proforma?.quotationDate).format('MMM D, YYYY')}</td>
                                             <td>
                                                 <span className="status-badge" style={{backgroundColor: `${statusColor}20`, color: statusColor}}>

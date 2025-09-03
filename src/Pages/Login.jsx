@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Col, Row } from 'react-bootstrap';
-import siteLogo from '../assets/imgs/logo.png'
+import siteLogo from '../assets/imgs/agencyLogo.png'
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
@@ -139,8 +139,8 @@ export default function SignInForm() {
                     data-mdb-button-init data-mdb-ripple-init
                     disabled={loading}
                     style={{
-                      backgroundColor: '#e67e22',
-                      borderColor: '#e67e22',
+                      backgroundColor: '#000',
+                      borderColor: '#000',
                       color: 'white',
                       fontSize: '1.1rem'
                     }}

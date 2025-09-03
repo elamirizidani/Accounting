@@ -7,25 +7,31 @@ import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
 import { useAuthStore } from '../../store/authStore';
+import { useServicesStore } from '../../store/servicesStore';
 
 
 const QuotationModal = ({ show, handleClose,quotation = {} }) => {
+  const {serviceCodes} = useServicesStore()
   const currencies = useMemo(() => [
+    {
+      name:'RWF',
+      key:"USDRWF",
+      symbol:'RWF',
+      cName:'Rwandan Franc',
+      selected:true
+    },
     {
       name:'USD',
       key:"USD",
       symbol:'$',
-      cName:'Dollars'
+      cName:'Dollars',
+      selected:true
     },{
       name:'EUR',
       key:"USDEUR",
       symbol:'€',
-      cName:'Euros'
-    },{
-      name:'RWF',
-      key:"USDRWF",
-      symbol:'RWF',
-      cName:'Rwandan Franc'
+      cName:'Euros',
+      selected:true
     }
   ], [])
 
@@ -45,6 +51,10 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const {loadQuotation} = useAuthStore()
+  const [selectedCode,setSelectedCode]=useState({
+    id:'',
+    code:''
+  })
 
   useEffect(() => {
   if (quotation) {
@@ -58,7 +68,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     setItems(quotation?.items || []);
     setSelectedCustomer(quotation?.billedTo || {});
     setSelectedCompany(quotation?.billedBy || {});
-    setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency) || {});
+    setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency || 'RWF') || {});
   }
 }, [quotation,currencies]);
 
@@ -72,8 +82,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   });
   const [newService, setNewService] = useState({
     service: '',
-    description: '',
-    code:''
+    description: ''
   });
 
 
@@ -146,7 +155,8 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 
   const addNewItem = (service ='', name ='',description='') => {
     if (!items.some(item => item.service === service)) {
-      setItems([...items, { service, name, description: description, quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+      
+      setItems([...items, { code:selectedCode.id,codeName:selectedCode.code,service, name, description: description, quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
     }
   };
 
@@ -159,14 +169,17 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
   };
   
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemChange = (index, field, value ,enableTax = true) => {
     const newItems = [...items];
     newItems[index][field] = value;
     if (field === 'quantity' || field === 'unitCost') {
       const quantity = parseFloat(newItems[index].quantity) || 0;
       const unitCost = parseFloat(newItems[index].unitCost) || 0;
+      const vat = enableTax ? quantity * unitCost  * 0.18 : 0;
+      newItems[index].vat = vat;
       newItems[index].total = quantity * unitCost;
     }
+    console.log(newItems)
     setItems(newItems);
   };
 
@@ -184,19 +197,32 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 
   const { amount, vat, total } = calculateTotals();
 
-  const numberToWords = (num) => {
-    
-    const words = [
-      'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-    ];
-    const tens = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
-    if (num < 20) return words[num];
-    if (num < 100) return tens[Math.floor(num/10)-2] + (num%10 ? ' ' + words[num%10] : '');
-    if (num < 1000) return words[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' and ' + numberToWords(num%100) : '');
-    return num; // Simplified - would need more logic for larger numbers
-  };
+  function numberToWords(num) {
+  if (num === 0) return "zero";
+
+  const below20 = ["", "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["", "", "Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  function helper(n) {
+    if (n === 0) return "";
+    else if (n < 20) return below20[n] + " ";
+    else if (n < 100) return tens[Math.floor(n/10)] + " " + helper(n%10);
+    else return below20[Math.floor(n/100)] + " hundred " + helper(n%100);
+  }
+
+  let res = "";
+  let i = 0;
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      res = helper(num % 1000) + thousands[i] + " " + res;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+  return res.trim();
+}
 
   // useEffect(()=>{
   //   console.log(selectedCompany)
@@ -408,7 +434,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                             setFormData({...formData, currency: value});
                           }}
                           >
-                        <option>Select Currency</option>
                         {
                           currencies?.map(currency=>(
                             <option 
@@ -536,8 +561,43 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
           {/* Items & Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3">Items & Details</h2>
+
             <Form.Group className="mb-3">
-              <Form.Label>Services</Form.Label>
+              <Form.Label>Service Code</Form.Label>
+              <Form.Select
+                onChange={(e) => {
+                  const { value, selectedOptions } = e.target;
+                  if (value && value.toLowerCase() !== "select") {
+                    const name = selectedOptions[0]?.dataset.name;
+                    setSelectedCode({
+                      id:value,
+                      code:name
+                    })
+                  }
+                }}
+              >
+                <option>Select</option>
+                <optgroup label='The Agency'>
+                  {serviceCodes?.map(service => (
+                    <option key={service._id} value={service._id} data-name={service.code}>
+                      {service.code}
+                    </option>
+                  ))}
+                </optgroup>
+              </Form.Select>
+              <Button 
+                variant="outline-primary bg-dark text-light" 
+                size="sm"
+                onClick={() => setShowServiceForm(true)}
+                >
+                ● Add New
+              </Button>
+            </Form.Group>
+
+
+
+            <Form.Group className="mb-3">
+              <Form.Label>Services Name</Form.Label>
               <Form.Select
                 onChange={(e) => {
                   const { value, selectedOptions } = e.target;
@@ -567,11 +627,12 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
               <Table bordered>
                 <thead>
                   <tr>
-                    <th>Service</th>
+                    <th>Service Code</th>
+                    <th>Service Name</th>
                     <th>Description</th>
-                    <th>Quantity</th>
+                    <th>Qty</th>
                     <th>Unit Cost ({selectedCurrency?.symbol? selectedCurrency?.symbol: '$'})</th>
-                    {/* <th>Total VAT</th> */}
+                    <th>VAT (18%)</th>
                     <th>Total Tax Incl.</th>
                     <th></th>
                   </tr>
@@ -579,6 +640,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                 <tbody>
                   {items.map((item, index) => (
                     <tr key={index}>
+                      <td>{item.codeName}</td>
                       <td>
     
                         {/* <Form.Control 
@@ -594,7 +656,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                             if (value && value.toLowerCase() !== "select") {
                               // const name = selectedOptions[0]?.dataset.name;
                               // const description = selectedOptions[0]?.dataset.description;
-                              handleItemChange(index,'service',value)
+                              handleItemChange(index,'service',value,enableTax)
                             }
                           }}
                         >
@@ -610,24 +672,24 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                         <Form.Control 
                           type="text" 
                           value={item.description}
-                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                          onChange={(e) => handleItemChange(index, 'description', e.target.value,enableTax)}
                         />
                       </td>
                       <td>
                         <Form.Control 
                           type="number" 
                           value={item.quantity} 
-                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value,enableTax)}
                         />
                       </td>
                       <td>
                         <Form.Control 
                           type="number" 
                           value={item.unitCost} 
-                          onChange={(e) => handleItemChange(index, 'unitCost', e.target.value)}
+                          onChange={(e) => handleItemChange(index, 'unitCost', e.target.value,enableTax)}
                         />
                       </td>
-                      {/* <td>{item.vat}</td> */}
+                      <td>{item.vat}</td>
                       <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td>
                       <td>
                         <Button variant="link" onClick={() => deleteItem(index)}>

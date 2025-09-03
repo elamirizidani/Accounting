@@ -9,19 +9,32 @@ const ViewInvoice = ({ show, handleClose, invoice }) => {
   const componentRef = React.useRef();
 console.log('invoice',invoice)
 
-  const numberToWords = (num) => {
-    
-    const words = [
-      'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-    ];
-    const tens = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
-    if (num < 20) return words[num];
-    if (num < 100) return tens[Math.floor(num/10)-2] + (num%10 ? ' ' + words[num%10] : '');
-    if (num < 1000) return words[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' and ' + numberToWords(num%100) : '');
-    return num; // Simplified - would need more logic for larger numbers
-  };
+  function numberToWords(num) {
+  if (num === 0) return "zero";
+
+  const below20 = ["", "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["", "", "Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  function helper(n) {
+    if (n === 0) return "";
+    else if (n < 20) return below20[n] + " ";
+    else if (n < 100) return tens[Math.floor(n/10)] + " " + helper(n%10);
+    else return below20[Math.floor(n/100)] + " hundred " + helper(n%100);
+  }
+
+  let res = "";
+  let i = 0;
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      res = helper(num % 1000) + thousands[i] + " " + res;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+  return res.trim();
+}
   
 const handlePDFSuccess = (result) => {
     console.log('PDF generated successfully:', result.filename);
@@ -111,7 +124,7 @@ const handlePDFSuccess = (result) => {
                 <h4 className="mb-1">{invoice?.quotation?.billedBy?.name || 'Company Name'}</h4>
                 {/* <p className="text-muted mb-1"><strong>Address:</strong> {invoice?.quotation?.billedBy?.address}</p> */}
                 <p className="fw-bold mb-1"><strong>TIN:</strong> {invoice?.quotation?.billedBy?.tinNumber}</p>
-                <p className="fw-bold mb-1"><strong>Email:</strong> {invoice?.quotation?.billedBy?.email}</p>
+                <p className="fw-bold mb-1"><strong>E:</strong> {invoice?.quotation?.billedBy?.email}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
               </div>
             </div>
@@ -126,7 +139,7 @@ const handlePDFSuccess = (result) => {
               </div>
               
               <div className="text-start  mt-3">
-                <h2 className="colored-text"><strong>N<sup>o</sup>: </strong> {invoice?.invoiceNumber}</h2>
+                <h2 className="colored-text">{invoice?.invoiceNumber}</h2>
                 <p className="fw-bold mb-1"><strong>Due date: </strong> {moment(invoice?.dueDate).format('DD MMM YYYY')}</p>
                 <p className="fw-bold mb-1"><strong>Date:</strong> {moment(invoice?.invoiceDate).format('DD MMM YYYY')}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
@@ -277,7 +290,7 @@ const handlePDFSuccess = (result) => {
 
             <p className="text-muted text-center">
               <small style={{color:'rgba(0, 0, 0, 0.15)'}}>
-                THIS IS A CUMPUTED PROFORMA BY {invoice?.quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
+                THIS IS A COMPUTER GENERATED INVOICE BY {invoice?.quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
               </small>
             </p>
 

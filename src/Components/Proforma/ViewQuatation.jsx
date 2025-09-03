@@ -5,6 +5,7 @@ import barndMark from '../../assets/imgs/brandmark.png'
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 
 const ViewQuatation = ({ show, handleClose, quotation }) => {
+  // console.log(quotation)
   const componentRef = React.useRef();
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -23,19 +24,32 @@ const ViewQuatation = ({ show, handleClose, quotation }) => {
 
   // const { amount, vat, total } = calculateTotals();
 
-  const numberToWords = (num) => {
-    
-    const words = [
-      'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-      'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-    ];
-    const tens = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
-    if (num < 20) return words[num];
-    if (num < 100) return tens[Math.floor(num/10)-2] + (num%10 ? ' ' + words[num%10] : '');
-    if (num < 1000) return words[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' and ' + numberToWords(num%100) : '');
-    return num; // Simplified - would need more logic for larger numbers
-  };
+  function numberToWords(num) {
+  if (num === 0) return "zero";
+
+  const below20 = ["", "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+    "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["", "", "Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  function helper(n) {
+    if (n === 0) return "";
+    else if (n < 20) return below20[n] + " ";
+    else if (n < 100) return tens[Math.floor(n/10)] + " " + helper(n%10);
+    else return below20[Math.floor(n/100)] + " hundred " + helper(n%100);
+  }
+
+  let res = "";
+  let i = 0;
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      res = helper(num % 1000) + thousands[i] + " " + res;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+  return res.trim();
+}
   
 
 const handlePDFSuccess = (result) => {
@@ -137,25 +151,25 @@ const handlePDFSuccess = (result) => {
               </div>
 
               <div className="text-start">
-                <h4 className="mb-1">{quotation?.billedBy?.name || 'Company Name'}</h4>
+                <h4 className="mb-1"><strong>{quotation?.billedBy?.name || 'Company Name'}</strong></h4>
                 {/* <p className="text-muted mb-1"><strong>Address:</strong> {quotation?.billedBy?.address}</p> */}
                 <p className="fw-bold mb-1"><strong>TIN:</strong> {quotation?.billedBy?.tinNumber}</p>
-                <p className="fw-bold mb-1"><strong>Email:</strong> {quotation?.billedBy?.email}</p>
+                <p className="fw-bold mb-1"><strong>E:</strong> {quotation?.billedBy?.email}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
               </div>
             </div>
 
-<hr/>
+            <hr/>
             <div className="d-flex justify-content-between mb-4">
               <div className=' mt-3'>
                 <div className='bordered-left px-2'>
-                  <h4 className="mb-1 colored-text">PROFORMA TO</h4>
-                  <h3 className="fw-bold mb-1">{quotation?.billedTo?.name}</h3>
+                  <h6 className="mb-1 colored-text">PROFORMA TO:</h6>
+                  <h5 className="fw-bold mb-1">{quotation?.billedTo?.name}</h5>
                 </div>
               </div>
               
               <div className="text-start  mt-3">
-                <h2 className="colored-text"><strong>N<sup>o</sup>: </strong> {quotation?.quotationId}</h2>
+                <h5 className="fw-bold mb-1">{quotation?.quotationId}</h5>
                 {/* <p className="fw-bold mb-1"><strong>N<sup>o</sup>: </strong> {quotation?.quotationId}</p> */}
                 <p className="fw-bold mb-1"><strong>Date:</strong> {formatDate(quotation?.quotationDate)}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
@@ -170,17 +184,17 @@ const handlePDFSuccess = (result) => {
               <Table bordered className="table">
                 <thead className="thead-dark">
                   <tr>
-                    <th width="5%">#</th>
+                    {/* <th width="5%">#</th> */}
                     <th width="15%">Service Code</th>
-                    <th width="20%">Service</th>
-                    {/* <th width="30%">Description</th> */}
+                    <th width="15%">Service Name</th>
+                    <th width="30%">Description</th>
                     <th width="5%" className="text-end">Qty</th>
                     <th width="15%" className="text-end">Unit Price</th>
                     {
                     quotation?.enableTax &&
                     <>
-                      <th width="5%" className="text-end">VAT</th>
-                      <th width="5%" className="text-end">Tax %</th>
+                      <th width="10%" className="text-end">VAT (18%)</th>
+                      {/* <th width="5%" className="text-end">Tax %</th> */}
                     </>
                     }
                     <th width="10%" className="text-end">Total</th>
@@ -189,18 +203,18 @@ const handlePDFSuccess = (result) => {
                 <tbody>
                   {quotation?.items?.map((item, index) => (
                     <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item?.service?.code}</td>
+                      {/* <td>{index + 1}</td> */}
+                      <td>{item?.code?.code}</td>
                       <td>{item?.service?.service}</td>
-                      {/* <td>{item?.description}</td> */}
+                      <td>{item?.description}</td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {
                         quotation?.enableTax ?
                         <>
-                          <td className="text-end">{(Number(item?.total*18)/100).toLocaleString()}</td>
-                          <td className="text-end">18%</td>
-                          <td className="text-end">{(Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)).toLocaleString()}</td>
+                          <td className="text-end">{Number(item?.quantity * item?.unitCost * 0.18).toLocaleString()}</td>
+                          {/* <td className="text-end">18%</td> */}
+                          <td className="text-end">{(Number(item?.quantity * item?.unitCost) + Number(item?.quantity * item?.unitCost * 0.18)).toLocaleString()}</td>
                         </>
                       :
                       <td className="text-end">{item?.total.toLocaleString()}</td>
@@ -274,24 +288,24 @@ const handlePDFSuccess = (result) => {
             {/* Amount in Words */}
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
-              <Table>
-                <tr>
-                  <td className='p-1'><strong>Bank Name:</strong></td>
-                  <td className='p-1'><strong>Bank of Kigali</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Account Name:</strong></td>
-                  <td className='p-1'><strong>SYMBOLIX Ltd</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Account No:</strong></td>
-                  <td className='p-1'><strong>100089237666</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Swift Code</strong></td>
-                  <td className='p-1'><strong>BKIGRWRW</strong></td>
-                </tr>
-              </Table>
+              <div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Bank Name: &nbsp;</strong>
+                  <strong style={{flex:2}}>Bank of Kigali</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>A/C Name: &nbsp;</strong>
+                  <strong style={{flex:2}}>SYMBOLIX Ltd</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Account No: &nbsp;</strong>
+                  <strong style={{flex:2}}>10008-9237666</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Swift Code: &nbsp;</strong>
+                  <strong style={{flex:2}}>BKIGRWRW</strong>
+                </div>
+              </div>
             </div>
 
             {/* Terms and Conditions */}
@@ -304,7 +318,7 @@ const handlePDFSuccess = (result) => {
 
             <p className="text-muted text-center">
               <small style={{color:'rgba(0, 0, 0, 0.15)'}}>
-                THIS IS A CUMPUTED PROFORMA BY {quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
+                THIS IS A COMPUTER GENERATED PROFORMA BY {quotation?.billedBy?.name}. NO SIGNATURE/STAMP REQUIRED
               </small>
             </p>
 

@@ -113,8 +113,8 @@ const getStatusBadge = (status) => {
             <div className="card-body pb-2">
               <div className=' d-flex justify-content-between align-items-center'>
                 <div>
-                  <h6 className="card-subtitle mb-2 text-muted">Paid Invoices</h6>
-                  <h3 className="card-title mb-1 fw-bold">{paidInvoice}</h3>
+                  <h6 className="card-subtitle mb-2 text-muted">Total Amount</h6>
+                  <h3 className="card-title mb-1 fw-bold">{totalInvoice || 0}</h3>
                 </div>
                 <div className="bg-success rounded-circle card-icon-container">
                   <i className="bi bi-check-circle text-white fs-5"></i>
@@ -124,7 +124,7 @@ const getStatusBadge = (status) => {
               <small className="text-success">
                   <i className="bi bi-arrow-up"></i>
                   {
-                    Number(allInvoiceData?.monthlyStatusChanges?.paid)/100
+                    Number(allInvoiceData?.monthlyStatusChanges?.paid || 0)/100
                   } from last month
               </small>
             </div>
@@ -136,8 +136,8 @@ const getStatusBadge = (status) => {
             <div className="card-body pb-2">
               <div className=' d-flex justify-content-between align-items-center'>
                 <div>
-                  <h6 className="card-subtitle mb-2 text-muted">Pending Invoices</h6>
-                  <h3 className="card-title mb-1 fw-bold">{sentInvoice}</h3>
+                  <h6 className="card-subtitle mb-2 text-muted">Paid Amount</h6>
+                  <h3 className="card-title mb-1 fw-bold">{sentInvoice || 0}</h3>
                 </div>
                 <div className="bg-warning rounded-circle card-icon-container">
                   <i className="bi bi-clock text-white fs-5"></i>
@@ -147,7 +147,7 @@ const getStatusBadge = (status) => {
               <small className="text-success">
                   <i className="bi bi-arrow-up"></i> 
                   {
-                    Number(allInvoiceData?.monthlyStatusChanges?.npaid)/100
+                    Number(allInvoiceData?.monthlyStatusChanges?.npaid || 0)/100
                   } from last month
               </small>
             </div>
@@ -159,8 +159,8 @@ const getStatusBadge = (status) => {
             <div className="card-body pb-2">
               <div className=' d-flex justify-content-between align-items-center'>
                 <div>
-                  <h6 className="card-subtitle mb-2 text-muted">Overdue Invoices</h6>
-                  <h3 className="card-title mb-1 fw-bold">{overdueInvoice}</h3>
+                  <h6 className="card-subtitle mb-2 text-muted">Overdue Amount/Invoices</h6>
+                  <h3 className="card-title mb-1 fw-bold">{overdueInvoice || 0}</h3>
                 </div>
                 <div className="bg-danger rounded-circle card-icon-container">
                   <i className="bi bi-exclamation-circle text-white fs-5"></i>
@@ -235,14 +235,14 @@ const getStatusBadge = (status) => {
                   <th>
                     <input type="checkbox" className="form-check-input" />
                   </th>
-                  <th>ID</th>
+                  <th>NO</th>
                   <th>Customer</th>
                   <th>Created On</th>
                   <th>Amount</th>
-                  <th>Paid</th>
+                  <th>Due Date</th>
+                  {/* <th>Paid</th> */}
                   <th>Status</th>
                   <th>Payment Mode</th>
-                  <th>Due Date</th>
                   <th></th>
                 </tr>
               </thead>
@@ -257,10 +257,11 @@ const getStatusBadge = (status) => {
                     <td className="fw-medium">{invoice.invoiceNumber}</td>
                     <td>{invoice?.quotation?.billedTo?.name}</td>
                     <td className="text-muted">{moment(invoice.invoiceDate).format('DD MMM YYYY')}</td>
-                    <td className="fw-medium">{invoice.totalAmount} {invoice?.quotation?.currency}</td>
-                    <td className="text-muted">{invoice.paid}</td>
+                    <td className="fw-medium">{Number(invoice.totalAmount).toLocaleString()}  {invoice?.quotation?.currency}</td>
+                    <td className="text-muted">{moment(invoice.dueDate).format('DD MMM YYYY')}</td>
+                    {/* <td className="text-muted">{invoice.paid}</td> */}
                     <td>
-                      <span className={getStatusBadge(invoice.status)}>
+                      <span className={getStatusBadge(invoice.status)} style={{textTransform:'capitalize'}}>
                         {invoice.status}
                         {invoice.status === 'Paid' && <i className="bi bi-check-circle ms-1"></i>}
                         {invoice.status === 'Overdue' && <i className="bi bi-exclamation-triangle ms-1"></i>}
@@ -269,8 +270,7 @@ const getStatusBadge = (status) => {
                         {invoice.status === 'Draft' && <i className="bi bi-file-text ms-1"></i>}
                       </span>
                     </td>
-                    <td>{invoice.paymentMethod}</td>
-                    <td className="text-muted">{moment(invoice.dueDate).format('DD MMM YYYY')}</td>
+                    <td style={{textTransform:'capitalize'}}>{invoice.paymentMethod}</td>
                     <td>
                       <button 
                         popoverTarget={`export-${index}`} 

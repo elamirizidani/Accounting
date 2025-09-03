@@ -16,7 +16,7 @@ export const useInvoiceStore = create((set,get)=>({
     getInvoices:async()=>{
         try {
             const res = await fetchData("invoice");
-            // console.log('invoice',res)
+            console.log('invoice',res)
                 set({
                     loadingInvoice:false,
                     allInvoiceData:res,

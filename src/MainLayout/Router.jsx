@@ -3,6 +3,8 @@ import MainLayout from "./MainLayout";
 import Home from '../Pages/Home'
 import Proforma from '../Pages/Proforma'
 import Invoices from '../Pages/Invoices'
+import Clients from '../Pages/Clients'
+
 import Transactions from '../Pages/Transactions'
 import { useAuthStore } from "../store/authStore";
 import { useEffect } from "react";
@@ -36,6 +38,8 @@ export default function AppRouter() {
         <Route index element={<Home />} />
         <Route path="/Proforma" element={<Proforma />} />
         <Route path="/Invoices" element={<Invoices />} />
+        <Route path="/Clients" element={<Clients />} />
+        
         <Route path="/Transactions" element={<Transactions />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

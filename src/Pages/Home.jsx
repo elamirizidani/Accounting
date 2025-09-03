@@ -121,7 +121,8 @@ function Home() {
                                 invoices?.map((invoice,i)=>(
                                     <tr key={i}>
                                         <td>{invoice?.quotation?.billedTo?.name}</td>
-                                        <td className="amount">{invoice.totalAmount} {invoice?.quotation?.currency}</td>
+                                        <td className="amount">{Number(invoice.totalAmount).toLocaleString()} {invoice?.quotation?.currency}</td>
+
                                         <td>{moment(invoice.dueDate).format('DD MMM YYYY')}</td>
                                         <td>
                                             <span className="status-badge">

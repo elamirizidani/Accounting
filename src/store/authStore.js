@@ -13,6 +13,7 @@ export const useAuthStore = create((set, get) => ({
   quotation:null,
   showMenuLabel:true,
 
+
   changeShowMenuLabel: () => {
     const currentState = get().showMenuLabel;
     set({ showMenuLabel: !currentState });
@@ -29,7 +30,9 @@ export const useAuthStore = create((set, get) => ({
         });
         await get().loadQuotation();
         const invoiceStore = useInvoiceStore.getState();
+        // const co
         await invoiceStore.getInvoices(); 
+
       } else {
         localStorage.removeItem('token');
         set({ isLoggedIn: false, user: null,userRole:null, });

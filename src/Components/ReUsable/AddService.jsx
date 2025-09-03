@@ -11,6 +11,7 @@ const AddService = ({
 }) => {
   // Local state for controlled inputs
   const [localClient, setLocalClient] = React.useState(newClient);
+  
 
   // Update local state when props change
   React.useEffect(() => {
@@ -39,16 +40,6 @@ const AddService = ({
     
           <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Service Code</Form.Label>
-                    <Form.Control 
-                      type="text" 
-                      name="code"
-                      value={localClient.code}
-                        onChange={handleChange}
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
                     <Form.Label>Name</Form.Label>
                     <Form.Control 
                       type="text" 
@@ -58,7 +49,7 @@ const AddService = ({
                     />
                   </Form.Group>
                   
-                  <Form.Group className="mb-3">
+                  {/* <Form.Group className="mb-3">
                     <Form.Label>Description</Form.Label>
                     <Form.Control 
                       as="textarea" rows={3}
@@ -66,7 +57,7 @@ const AddService = ({
                       value={localClient.description}
                       onChange={handleChange}
                     />
-                  </Form.Group>
+                  </Form.Group> */}
                 </Form>
 
         
