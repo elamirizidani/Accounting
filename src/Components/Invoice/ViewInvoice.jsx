@@ -153,43 +153,44 @@ const handlePDFSuccess = (result) => {
             <div className="table-responsive">
               <Table bordered className="table">
                 <thead className="thead-dark">
+
                   <tr>
-                    <th width="5%">#</th>
+                    {/* <th width="5%">#</th> */}
                     <th width="15%">Service Code</th>
-                    <th width="20%">Service</th>
-                    {/* <th width="30%">Description</th> */}
+                    <th width="15%">Service Name</th>
+                    <th width="30%">Description</th>
                     <th width="5%" className="text-end">Qty</th>
                     <th width="15%" className="text-end">Unit Price</th>
                     {
                     invoice?.quotation?.enableTax &&
                     <>
-                      <th width="5%" className="text-end">VAT</th>
-                      <th width="5%" className="text-end">Tax %</th>
+                      <th width="10%" className="text-end">VAT (18%)</th>
+                      {/* <th width="5%" className="text-end">Tax %</th> */}
                     </>
                     }
                     <th width="10%" className="text-end">Total</th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {invoice?.quotation?.items?.map((item, index) => (
                     <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{item?.service?.code}</td>
+                      <td>{item?.code?.code}</td>
                       <td>{item?.service?.service}</td>
-                      {/* <td>{item?.description}</td> */}
+                      <td>{item?.description}</td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {
                         invoice?.quotation?.enableTax ?
                         <>
-                          <td className="text-end">{(Number(item?.total*18)/100).toLocaleString()}</td>
-                          <td className="text-end">18%</td>
-                          <td className="text-end">{(Number(item?.total?.toFixed(2)) + Number((item?.total*18)/100)).toLocaleString()}</td>
+                          <td className="text-end">{Number(item?.quantity * item?.unitCost * 0.18).toLocaleString()}</td>
+                          <td className="text-end">{(Number(item?.quantity * item?.unitCost) + Number(item?.quantity * item?.unitCost * 0.18)).toLocaleString()}</td>
                         </>
                       :
                       <td className="text-end">{item?.total.toLocaleString()}</td>
                       }
                     </tr>
+
                   ))}
                 </tbody>
               </Table>
@@ -258,26 +259,27 @@ const handlePDFSuccess = (result) => {
             </Row> */}
 
             {/* Amount in Words */}
+
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
-              <Table>
-                <tr>
-                  <td className='p-1'><strong>Bank Name:</strong></td>
-                  <td className='p-1'><strong>Bank of Kigali</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Account Name:</strong></td>
-                  <td className='p-1'><strong>SYMBOLIX Ltd</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Account No:</strong></td>
-                  <td className='p-1'><strong>100089237666</strong></td>
-                </tr>
-                <tr>
-                  <td className='p-1'><strong>Swift Code</strong></td>
-                  <td className='p-1'><strong>BKIGRWRW</strong></td>
-                </tr>
-              </Table>
+              <div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Bank Name: &nbsp;</strong>
+                  <strong style={{flex:2}}>Bank of Kigali</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>A/C Name: &nbsp;</strong>
+                  <strong style={{flex:2}}>SYMBOLIX Ltd</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Account No: &nbsp;</strong>
+                  <strong style={{flex:2}}>10008-9237666</strong>
+                </div>
+                <div className='d-flex'>
+                  <strong style={{flex:1}}>Swift Code: &nbsp;</strong>
+                  <strong style={{flex:2}}>BKIGRWRW</strong>
+                </div>
+              </div>
             </div>
 
             {/* Terms and Conditions */}

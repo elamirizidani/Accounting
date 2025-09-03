@@ -18,20 +18,20 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
       key:"USDRWF",
       symbol:'RWF',
       cName:'Rwandan Franc',
-      selected:true
+      selected:false
     },
     {
       name:'USD',
       key:"USD",
       symbol:'$',
       cName:'Dollars',
-      selected:true
+      selected:false
     },{
       name:'EUR',
       key:"USDEUR",
       symbol:'€',
       cName:'Euros',
-      selected:true
+      selected:false
     }
   ], [])
 
@@ -439,6 +439,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                             <option 
                               key={currency.key}
                               value={currency.name}
+                              selected={currency.selected}
                               data-currency={JSON.stringify(currency)}
                               >
                               {currency.name}
