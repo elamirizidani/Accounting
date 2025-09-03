@@ -8,7 +8,7 @@ import Clients from '../Pages/Clients'
 import Transactions from '../Pages/Transactions'
 import { useAuthStore } from "../store/authStore";
 import { useEffect } from "react";
-import Login from "../Pages/login";
+import Login from "../Pages/Login";
 
 export default function AppRouter() {
   const { initialize, isLoggedIn } = useAuthStore();

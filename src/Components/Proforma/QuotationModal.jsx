@@ -283,14 +283,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     }
   };
 
-const AddServiceCode = async (e)=>{
-  if (e) e.preventDefault();
-  try {
-    const res = await insertData('services',)
-  } catch (error) {
+// const AddServiceCode = async (e)=>{
+//   if (e) e.preventDefault();
+//   try {
+//     const res = await insertData('services',)
+//   } catch (error) {
     
-  }
-}
+//   }
+// }
 
   const handleAddService = async (e) => {
     if (e) e.preventDefault();  // Prevent default if event exists
@@ -763,7 +763,7 @@ const AddServiceCode = async (e)=>{
                 </div>
                 <div className="d-flex justify-content-between">
                   <span>Total In Words</span>
-                  <span>{numberToWords(total.toLocaleString())} {selectedCurrency?.cName ? selectedCurrency?.cName: 'Dollars'}</span>
+                  <span>{numberToWords(total)} {selectedCurrency?.cName ? selectedCurrency?.cName: 'Dollars'}</span>
                 </div>
               </div>
             </div>

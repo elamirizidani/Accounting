@@ -286,6 +286,14 @@ const handlePDFSuccess = (result) => {
             </Row> */}
 
             {/* Amount in Words */}
+
+            {quotation?.additionalNotes && (
+              <div className="mt-4 bordered-left px-2">
+                <h5 className="mb-2">Notes:</h5>
+                <div className="text-muted" dangerouslySetInnerHTML={{ __html: quotation?.additionalNotes }} />
+              </div>
+            )}
+
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
               <div>
