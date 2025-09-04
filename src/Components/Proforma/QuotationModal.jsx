@@ -894,14 +894,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
         setNewClient={setNewService}
         handleAddClient={handleAddService}
         loading={loading}/>
-        <AddServiceCode
-          show={showCodeForm}
-          onHide={() => showCodeForm(false)}
-          newClient={newCode}
-          setNewClient={setNewCode}
-          handleAddCode={handleAddCode}
-          loading={loading}
-        />
+      <AddServiceCode
+        show={showCodeForm}
+        onHide={() => showCodeForm(false)}
+        newClient={newCode}
+        setNewClient={setNewCode}
+        handleAddCode={handleAddCode}
+        loading={loading}
+      />
 
       </>
   );
