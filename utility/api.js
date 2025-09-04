@@ -54,7 +54,7 @@ export function logout() {
 }
 
 export const updateData = async (endpoint,data)=>{
-  const res = await api.put(endpoint,data)
+  const res = await api.patch(endpoint,data)
   return res.data
 }
 

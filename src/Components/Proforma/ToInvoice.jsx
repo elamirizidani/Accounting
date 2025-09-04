@@ -69,6 +69,8 @@ const [invoiceData,setInvoiceData] =useState({
 }, [quotation,currencies]);
 
 
+  console.log('quotation to invoice',quotation)
+
   const [formData, setFormData] = useState({
     ...quotation,
     items: quotation?.items || [],
@@ -499,7 +501,7 @@ const [invoiceData,setInvoiceData] =useState({
                         /> */}
                       </td>
                       {/* <td>{item.vat}</td> */}
-                      <td>{selectedCurrency?.symbol? selectedCurrency?.symbol: '$'} {item.total.toFixed(2)}</td>
+                      <td>{(Number(item?.quantity * item?.unitCost) + Number(item?.quantity * item?.unitCost * 0.18)).toLocaleString()}</td>
                       <td>
                         <Button variant="link" onClick={() => deleteItem(index)}>
                           <i className="bi bi-trash"></i>

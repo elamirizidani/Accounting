@@ -3,7 +3,7 @@ import { Modal, Button, Form, Table,Spinner, Row, Col, Card } from 'react-bootst
 import '../create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { fetchData, insertData } from '../../../utility/api';
+import { fetchData, insertData, updateData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
 import AddServiceCode from '../ReUsable/AddServiceCode';
@@ -168,7 +168,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
       newItems[index].vat = vat;
       newItems[index].total = quantity * unitCost;
     }
-    console.log(newItems)
+    // console.log(newItems)
     setItems(newItems);
   };
 
@@ -242,8 +242,11 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
       notes: '', // can bind to form state if needed
     };
 
+if(quotation?._id)
+    await updateData(`quotation/${quotation?._id}`,payload);
+  else
+    await insertData('quotation',payload);
 
-    const response = await insertData('quotation',payload);
     alert('Quotation created successfully!');
     // console.log(response);
 
@@ -605,37 +608,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   ))}
                 </optgroup>
               </Form.Select>
-              {/* {
-                showCodeForm && 
-                <Form onSubmit={handleSubmit}>
-                <Row className='align-items-center'>
-                  <Col md={8}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Code Name</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="code"
-                    onChange={(e) => {
-                    const value = e.target.value;
-                    setNewCode({...newCode, code: value});
-                  }}
-                  />
-                </Form.Group>
-                </Col>
-                <Col>
-                <Button 
-                  variant="outline-primary bg-dark text-light" 
-                  size="sm"
-                  onClick={handleAddCode}
-                  >
-                  Save
-                </Button>
-                </Col>
-                </Row>
-              </Form>
-              } */}
-              
-
               <Button 
                 variant="outline-primary bg-dark text-light" 
                 size="sm"
@@ -896,7 +868,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
         loading={loading}/>
       <AddServiceCode
         show={showCodeForm}
-        onHide={() => showCodeForm(false)}
+        onHide={() => setShowCodeForm(false)}
         newClient={newCode}
         setNewClient={setNewCode}
         handleAddCode={handleAddCode}

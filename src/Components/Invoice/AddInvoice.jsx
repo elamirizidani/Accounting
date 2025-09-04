@@ -8,10 +8,13 @@ import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
 import { useInvoiceStore } from '../../store/invoiceStore';
 import { useAuthStore } from '../../store/authStore';
+import AddServiceCode from '../ReUsable/AddServiceCode';
+import { useServicesStore } from '../../store/servicesStore';
 
 
 const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   const {getInvoices} = useInvoiceStore()
+  const {serviceCodes,getServiceCodes} = useServicesStore()
   const {loadQuotation} = useAuthStore()
   const currencies = useMemo(() => [
     {
@@ -32,6 +35,15 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
     }
   ], [])
 
+  const [selectedCode,setSelectedCode]=useState({
+      id:'',
+      code:''
+    })
+    const [newCode,setNewCode] = useState({
+      code:"",
+      subBrand:""
+    })
+
   const [enableTax, setEnableTax] = useState(true);
   const [addDueDate, setAddDueDate] = useState(false);
   const [roundOffTotal, setRoundOffTotal] = useState(true);
@@ -42,7 +54,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   const [selectedCustomer,setSelectedCustomer] = useState(invoice?.billedTo||{})
   const [selectedCompany,setSelectedCompany] = useState(invoice?.billedBy||{})
   const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === invoice?.currency)||{})
-
+  const [showCodeForm, setShowCodeForm] = useState(false);
   const [showClientForm, setShowClientForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -149,7 +161,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
 
   const addNewItem = (service ='', name ='',description='') => {
     if (!items.some(item => item.service === service)) {
-      setItems([...items, { service, name, description: description, quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
+      setItems([...items, { code:selectedCode.id,codeName:selectedCode.code,service, name, description: description, quantity: 1, unitCost: 0, vat: 0, total: 0 }]);
     }
   };
 
@@ -294,6 +306,39 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
       setLoading(false);
     }
   };
+
+
+
+    const handleAddCode = async (e) => {
+      if (e) e.preventDefault();  // Prevent default if event exists
+      
+      // Basic validation
+      if (!newCode.code) {
+        alert('Please fill in required fields');
+        return;
+      }
+  
+      try {
+        setLoading(true);
+        const response = await insertData('services/serviceCodes', newCode);
+        // Update state
+        getServiceCodes();
+        setSelectedCode({
+          id:response?._id,
+          code:response?.code
+        })
+      
+        // Reset and close
+        setNewCode({ code: ''});
+        setShowCodeForm(false);
+        
+      } catch (error) {
+        console.error('Error adding Code:', error);
+        alert('Failed to add Code: ' + (error.message || 'Please try again'));
+      } finally {
+        setLoading(false);
+      }
+    };
 
 
 
@@ -571,6 +616,44 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
           {/* Items & Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3">Items & Details</h2>
+
+
+                        <Form.Group className="mb-3">
+                          <Form.Label>Service Code</Form.Label>
+                          <Form.Select
+                            onChange={(e) => {
+                              const { value, selectedOptions } = e.target;
+                              if (value && value.toLowerCase() !== "select") {
+                                const name = selectedOptions[0]?.dataset.name;
+                                setSelectedCode({
+                                  id:value,
+                                  code:name
+                                })
+                              }
+                            }}
+                          >
+                            <option>Select</option>
+                            <optgroup label='The Agency'>
+                              {serviceCodes?.map(service => (
+                                <option key={service._id} value={service._id} data-name={service.code}>
+                                  {service.code}
+                                </option>
+                              ))}
+                            </optgroup>
+                          </Form.Select>
+                          <Button 
+                            variant="outline-primary bg-dark text-light" 
+                            size="sm"
+                            onClick={() => setShowCodeForm(prev => !prev)}
+                            >
+                              {
+                                !showCodeForm ? '● Add New':'Cancel'
+                              }
+                          </Button>
+                        </Form.Group>
+                        
+
+
             <Form.Group className="mb-3">
               <Form.Label>Services</Form.Label>
               <Form.Select
@@ -802,6 +885,14 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
         setNewClient={setNewService}
         handleAddClient={handleAddService}
         loading={loading}/>
+      <AddServiceCode
+              show={showCodeForm}
+              onHide={() => setShowCodeForm(false)}
+              newClient={newCode}
+              setNewClient={setNewCode}
+              handleAddCode={handleAddCode}
+              loading={loading}
+            />
 
       </>
   );
