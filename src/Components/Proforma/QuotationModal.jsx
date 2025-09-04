@@ -6,12 +6,14 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
+import AddServiceCode from '../ReUsable/AddServiceCode';
+
 import { useAuthStore } from '../../store/authStore';
 import { useServicesStore } from '../../store/servicesStore';
 
 
 const QuotationModal = ({ show, handleClose,quotation = {} }) => {
-  const {serviceCodes} = useServicesStore()
+  const {serviceCodes,getServiceCodes} = useServicesStore()
   const currencies = useMemo(() => [
     {
       name:'RWF',
@@ -48,12 +50,17 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
 
   const [showClientForm, setShowClientForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [showCodeForm, setShowCodeForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const {loadQuotation} = useAuthStore()
   const [selectedCode,setSelectedCode]=useState({
     id:'',
     code:''
+  })
+  const [newCode,setNewCode] = useState({
+    code:"",
+    subBrand:""
   })
 
   useEffect(() => {
@@ -283,14 +290,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     }
   };
 
-// const AddServiceCode = async (e)=>{
-//   if (e) e.preventDefault();
-//   try {
-//     const res = await insertData('services',)
-//   } catch (error) {
-    
-//   }
-// }
 
   const handleAddService = async (e) => {
     if (e) e.preventDefault();  // Prevent default if event exists
@@ -315,6 +314,37 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
     } catch (error) {
       console.error('Error adding client:', error);
       alert('Failed to add client: ' + (error.message || 'Please try again'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCode = async (e) => {
+    if (e) e.preventDefault();  // Prevent default if event exists
+    
+    // Basic validation
+    if (!newCode.code) {
+      alert('Please fill in required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await insertData('services/serviceCodes', newCode);
+      // Update state
+      getServiceCodes();
+      setSelectedCode({
+        id:response?._id,
+        code:response?.code
+      })
+    
+      // Reset and close
+      setNewCode({ code: ''});
+      setShowCodeForm(false);
+      
+    } catch (error) {
+      console.error('Error adding Code:', error);
+      alert('Failed to add Code: ' + (error.message || 'Please try again'));
     } finally {
       setLoading(false);
     }
@@ -415,6 +445,7 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                       <Form.Label>Currency</Form.Label>
                       <Form.Select 
                       value={formData.currency}
+                      defaultValue='RWF'
                         onChange={ async(e) => {
                             const value = e.target.value;
                             const selectedOption = e.target.options[e.target.selectedIndex];
@@ -428,7 +459,6 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                             <option 
                               key={currency.key}
                               value={currency.name}
-                              selected={currency.selected}
                               data-currency={JSON.stringify(currency)}
                               >
                               {currency.name}
@@ -575,14 +605,48 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
                   ))}
                 </optgroup>
               </Form.Select>
+              {/* {
+                showCodeForm && 
+                <Form onSubmit={handleSubmit}>
+                <Row className='align-items-center'>
+                  <Col md={8}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Code Name</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    name="code"
+                    onChange={(e) => {
+                    const value = e.target.value;
+                    setNewCode({...newCode, code: value});
+                  }}
+                  />
+                </Form.Group>
+                </Col>
+                <Col>
+                <Button 
+                  variant="outline-primary bg-dark text-light" 
+                  size="sm"
+                  onClick={handleAddCode}
+                  >
+                  Save
+                </Button>
+                </Col>
+                </Row>
+              </Form>
+              } */}
+              
+
               <Button 
                 variant="outline-primary bg-dark text-light" 
                 size="sm"
-                onClick={() => setShowServiceForm(true)}
+                onClick={() => setShowCodeForm(prev => !prev)}
                 >
-                ● Add New
+                  {
+                    !showCodeForm ? '● Add New':'Cancel'
+                  }
               </Button>
             </Form.Group>
+            
 
 
 
@@ -830,6 +894,14 @@ const QuotationModal = ({ show, handleClose,quotation = {} }) => {
         setNewClient={setNewService}
         handleAddClient={handleAddService}
         loading={loading}/>
+        <AddServiceCode
+          show={showCodeForm}
+          onHide={() => showCodeForm(false)}
+          newClient={newCode}
+          setNewClient={setNewCode}
+          handleAddCode={handleAddCode}
+          loading={loading}
+        />
 
       </>
   );

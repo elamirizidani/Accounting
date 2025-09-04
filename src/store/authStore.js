@@ -62,6 +62,7 @@ export const useAuthStore = create((set, get) => ({
         // console.log('response on store',response)
         if (response.token) {
           localStorage.setItem('token', response.token);
+          set({isLoggedIn:true})
           await get().checkAuth();
           return {
               role:response.user.role,
