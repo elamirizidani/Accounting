@@ -11,6 +11,8 @@ export const useInvoiceStore = create((set,get)=>({
     sentInvoice: null,
     draftInvoice:null,
     totalInvoice:null,
+    totalPaidAmount:null,
+    totalAmountExceptDraft:null,
     allInvoiceData:{},
 
     getInvoices:async()=>{
@@ -27,7 +29,9 @@ export const useInvoiceStore = create((set,get)=>({
                     unpaidInvoice: res?.statusCounts?.unpaid || null,
                     sentInvoice: res?.statusCounts?.sent || null,
                     draftInvoice: res?.statusCounts?.draft || null,
-                    totalInvoice: Number(res?.statusCounts?.paid || 0) + Number(res?.statusCounts?.overdue || 0) + Number(res?.statusCounts?.partiallyPaid || 0) + Number(res?.statusCounts?.unpaid || 0) + Number(res?.statusCounts?.sent || 0) + Number(res?.statusCounts?.draft || 0)
+                    totalInvoice: Number(res?.statusCounts?.paid || 0) + Number(res?.statusCounts?.overdue || 0) + Number(res?.statusCounts?.partiallyPaid || 0) + Number(res?.statusCounts?.unpaid || 0) + Number(res?.statusCounts?.sent || 0) + Number(res?.statusCounts?.draft || 0),
+                    totalPaidAmount:res.totalPaidAmount,
+                    totalAmountExceptDraft:res.totalAmountExceptDraft
                 })
         } catch (error) {
             console.log(error)
