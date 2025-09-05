@@ -116,7 +116,7 @@ const getStatusBadge = (status) => {
               <div className=' d-flex justify-content-between align-items-center'>
                 <div>
                   <h6 className="card-subtitle mb-2 text-muted">Total Amount</h6>
-                  <h3 className="card-title mb-1 fw-bold">{totalAmountExceptDraft.toLocaleString() || 0}</h3>
+                  <h3 className="card-title mb-1 fw-bold">{Number(totalAmountExceptDraft)?.toLocaleString() || 0}</h3>
                 </div>
                 <div className="bg-success rounded-circle card-icon-container">
                   <i className="bi bi-check-circle text-white fs-5"></i>
@@ -139,7 +139,7 @@ const getStatusBadge = (status) => {
               <div className=' d-flex justify-content-between align-items-center'>
                 <div>
                   <h6 className="card-subtitle mb-2 text-muted">Paid Amount</h6>
-                  <h3 className="card-title mb-1 fw-bold">{totalPaidAmount.toLocaleString() || 0}</h3>
+                  <h3 className="card-title mb-1 fw-bold">{Number(totalPaidAmount)?.toLocaleString() || 0}</h3>
                 </div>
                 <div className="bg-warning rounded-circle card-icon-container">
                   <i className="bi bi-clock text-white fs-5"></i>
