@@ -686,7 +686,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                 <thead>
                   <tr>
                     <th>Service</th>
-                    <th>Description</th>
+                    <th style={{width:'40%'}}>Description</th>
                     <th>Quantity</th>
                     <th>Unit Cost ({selectedCurrency?.symbol? selectedCurrency?.symbol: '$'})</th>
                     {/* <th>Total VAT</th> */}
@@ -717,7 +717,8 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                         </td>
                       <td>
                         <Form.Control 
-                          type="text" 
+                          as="textarea"
+                          rows={4}
                           value={item.description}
                           onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                         />

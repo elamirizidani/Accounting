@@ -653,14 +653,14 @@ if(quotation?._id)
               <Table bordered>
                 <thead>
                   <tr>
-                    <th>Service Code</th>
-                    <th>Service Name</th>
-                    <th>Description</th>
-                    <th>Qty</th>
-                    <th>Unit Cost ({selectedCurrency?.symbol? selectedCurrency?.symbol: '$'})</th>
-                    <th>VAT (18%)</th>
-                    <th>Total Tax Incl.</th>
-                    <th></th>
+                    <th style={{width:'5%'}}>Service Code</th>
+                    <th style={{width:'10%'}}>Service Name</th>
+                    <th style={{width:'30%'}}>Description</th>
+                    <th style={{width:'8%'}}>Qty</th>
+                    <th style={{width:'10%'}}>Unit Cost ({selectedCurrency?.symbol? selectedCurrency?.symbol: '$'})</th>
+                    <th style={{width:'10%'}}>VAT (18%)</th>
+                    <th  style={{width:'10%'}}>Total Tax Incl.</th>
+                    <th style={{width:'2%'}}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -696,7 +696,8 @@ if(quotation?._id)
                         </td>
                       <td>
                         <Form.Control 
-                          type="text" 
+                          as="textarea"
+                          rows={4}
                           value={item.description}
                           onChange={(e) => handleItemChange(index, 'description', e.target.value,enableTax)}
                         />
