@@ -151,10 +151,10 @@ const handlePDFSuccess = (result) => {
               </div>
 
               <div className="text-start">
-                <h4 className="mb-1"><strong>{quotation?.billedBy?.name || 'Company Name'}</strong></h4>
+                <h4 className="mb-1" style={{ fontSize:'14px'}}><strong>{quotation?.billedBy?.name || 'Company Name'}</strong></h4>
                 {/* <p className="text-muted mb-1"><strong>Address:</strong> {quotation?.billedBy?.address}</p> */}
-                <p className="fw-bold mb-1"><strong>TIN:</strong> {quotation?.billedBy?.tinNumber}</p>
-                <p className="fw-bold mb-1"><strong>E:</strong> {quotation?.billedBy?.email}</p>
+                <p className="fw-bold mb-1" style={{ fontSize:'12px'}}><strong>TIN:</strong> {quotation?.billedBy?.tinNumber}</p>
+                <p className="fw-bold mb-1" style={{ fontSize:'12px'}}><strong>Tel:</strong> {quotation?.billedBy?.phone}</p>
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{quotation?.status}</span></p> */}
               </div>
             </div>
