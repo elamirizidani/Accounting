@@ -11,6 +11,7 @@ export const useAuthStore = create((set, get) => ({
   userRole:null,
   loading:true,
   quotation:null,
+  lpos:null,
   showMenuLabel:true,
 
 
@@ -29,6 +30,8 @@ export const useAuthStore = create((set, get) => ({
           userRole:response.user.role
         });
         await get().loadQuotation();
+        await get().loadLpos();
+        
         const invoiceStore = useInvoiceStore.getState();
         // const co
         await invoiceStore.getInvoices(); 
@@ -48,6 +51,16 @@ export const useAuthStore = create((set, get) => ({
         const res = await fetchData('quotation');
         // console.log(res)
         set({quotation:res || []})
+
+    } catch (error) {
+       console.error('Failed to Load Data:', error); 
+    }
+  },
+  loadLpos: async () =>{
+    try {
+        const res = await fetchData('lpo');
+        // console.log(res)
+        set({lpos:res || []})
 
     } catch (error) {
        console.error('Failed to Load Data:', error); 

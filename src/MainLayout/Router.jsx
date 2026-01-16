@@ -4,6 +4,7 @@ import Home from '../Pages/Home'
 import Proforma from '../Pages/Proforma'
 import Invoices from '../Pages/Invoices'
 import Clients from '../Pages/Clients'
+import Lpo from '../Pages/Lpo'
 
 import Transactions from '../Pages/Transactions'
 import { useAuthStore } from "../store/authStore";
@@ -39,6 +40,7 @@ export default function AppRouter() {
         <Route path="/Proforma" element={<Proforma />} />
         <Route path="/Invoices" element={<Invoices />} />
         <Route path="/Clients" element={<Clients />} />
+        <Route path="/Lpo" element={<Lpo />} />
         
         <Route path="/Transactions" element={<Transactions />} />
       </Route>

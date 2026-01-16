@@ -15,6 +15,7 @@ const SideBar = () => {
     { path: '/Proforma', icon: 'bi-file-earmark-text', label: 'Proforma',isLink:true },
     { path: '/Invoices', icon: 'bi-receipt', label: 'Invoices',isLink:true },
     { path: '/Clients', icon: 'bi-receipt', label: 'Clients',isLink:true },
+    { path: '/Lpo', icon: 'bi-file-earmark-break', label: 'LPO',isLink:true },
     { path: '/Transactions', icon: 'bi-arrow-left-right', label: 'Transactions',isLink:true },
     { path: '/logout', icon: 'bi-door-closed', label: 'Logout',isLink:false,fnToCall:logout },
     // { path: '/', icon: 'bi-bar-chart', label: 'Reports',

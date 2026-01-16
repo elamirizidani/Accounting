@@ -1,0 +1,100 @@
+.service-manager {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.service-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.btn-add-service {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-add-service:hover {
+    background-color: #45a049;
+}
+
+.service-form {
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+}
+
+.service-form h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.btn-submit-service {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-submit-service:hover {
+    background-color: #0b7dda;
+}
+
+.service-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.service-item {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.service-item:hover {
+    background-color: #e8f5e9;
+    border-color: #4CAF50;
+}
+
+.service-item.selected {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.service-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.service-description {
+    font-size: 12px;
+    color: #666;
+}
+
+.service-item.selected .service-description {
+    color: #e0e0e0;
+}
