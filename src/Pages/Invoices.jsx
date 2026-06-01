@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AddInvoice from '../Components/Invoice/AddInvoice';
 import ViewInvoice from '../Components/Invoice/ViewInvoice';
 import { useInvoiceStore } from '../store/invoiceStore';
-import { fetchData } from '../../utility/api';
+import { deleteData, fetchData, updateData } from '../../utility/api';
 import {
   DocumentTable,
   EmptyState,
@@ -17,6 +17,57 @@ import {
 
 const statusTabs = ['all', 'draft', 'unpaid', 'paid', 'overdue', 'cancelled'];
 const trackTabs = ['all', 'structured', 'unstructured'];
+const invoiceStatuses = ['draft', 'unpaid', 'paid', 'overdue', 'cancelled'];
+
+function InvoiceStatusControl({ invoice, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleChange = async (event) => {
+    const nextStatus = event.target.value;
+    setIsSaving(true);
+
+    try {
+      await onChange(invoice, nextStatus);
+      setIsOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isOpen) {
+    return (
+      <select
+        className="form-select form-select-sm ops-status-select"
+        value={invoice.status || 'unpaid'}
+        onChange={handleChange}
+        onBlur={() => {
+          if (!isSaving) setIsOpen(false);
+        }}
+        disabled={isSaving}
+        autoFocus
+      >
+        {invoiceStatuses.map((status) => (
+          <option key={status} value={status}>
+            {status.replaceAll('-', ' ')}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="ops-status-button"
+      onClick={() => setIsOpen(true)}
+      title="Change invoice status"
+    >
+      <StatusBadge status={invoice.status} />
+      <i className="bi bi-chevron-down" />
+    </button>
+  );
+}
 
 function Invoices() {
   const [showModal, setShowModal] = useState(false);
@@ -33,6 +84,7 @@ function Invoices() {
     totalPaidAmount,
     totalAmountExceptDraft,
     allInvoiceData,
+    getInvoices,
   } = useInvoiceStore();
 
   useEffect(() => {
@@ -87,6 +139,43 @@ function Invoices() {
     fetchData('invoice/counters')
       .then(setCounters)
       .catch(() => setCounters([]));
+  };
+
+  const handleInvoiceStatusChange = async (invoice, nextStatus) => {
+    let paidAt;
+
+    if (nextStatus === 'paid') {
+      const defaultDate = invoice.paidAt
+        ? new Date(invoice.paidAt).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+      paidAt = window.prompt('Paid date (YYYY-MM-DD)', defaultDate);
+      if (paidAt === null) return;
+    }
+
+    try {
+      await updateData(`invoice/${invoice._id}/status`, {
+        status: nextStatus,
+        ...(nextStatus === 'paid' ? { paidAt } : {}),
+      });
+      await getInvoices();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update invoice status');
+      throw error;
+    }
+  };
+
+  const handleDeleteInvoice = async (invoice) => {
+    if (!window.confirm(`Delete invoice ${invoice.invoiceNumber}? This cannot be undone.`)) return;
+
+    try {
+      await deleteData('invoice', invoice._id);
+      await getInvoices();
+      fetchData('invoice/counters')
+        .then(setCounters)
+        .catch(() => setCounters([]));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete invoice');
+    }
   };
 
   return (
@@ -212,7 +301,17 @@ function Invoices() {
             {
               key: 'status',
               label: 'Status',
-              render: (invoice) => <StatusBadge status={invoice.status} />,
+              render: (invoice) => (
+                <InvoiceStatusControl
+                  invoice={invoice}
+                  onChange={handleInvoiceStatusChange}
+                />
+              ),
+            },
+            {
+              key: 'paidAt',
+              label: 'Paid',
+              render: (invoice) => invoice.status === 'paid' ? formatDate(invoice.paidAt) : 'Not paid',
             },
             {
               key: 'actions',
@@ -236,6 +335,13 @@ function Invoices() {
                     onClick={() => handleEditInvoice(invoice)}
                   >
                     Edit
+                  </button>
+                  <button
+                    className="btn btn-outline-danger"
+                    type="button"
+                    onClick={() => handleDeleteInvoice(invoice)}
+                  >
+                    Delete
                   </button>
                 </div>
               ),

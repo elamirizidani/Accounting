@@ -39,6 +39,7 @@ const buildInvoiceFormData = (invoice = {}) => {
     paymentTerms: invoice?.paymentTerms || '',
     invoiceDate: toDateInputValue(invoice?.invoiceDate || quotation?.quotationDate || new Date()),
     dueDate: toDateInputValue(invoice?.dueDate),
+    paidAt: toDateInputValue(invoice?.paidAt),
     billedBy: getRecordId(quotation?.billedBy || invoice?.billedBy),
     billedTo: getRecordId(quotation?.billedTo || invoice?.billedTo),
     currency: quotation?.currency || invoice?.currency || 'RWF',
@@ -100,7 +101,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   const [showClientForm, setShowClientForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [, setError] = useState('');
+  const [error, setError] = useState('');
 
 
   useEffect(() => {
@@ -263,18 +264,25 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   return res.trim();
 }
 
-  // useEffect(()=>{
-  //   console.log(selectedCompany)
-  // },[selectedCompany])
-
-
-
-
   const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
     setLoading(true);
+    setError('');
+
+    const validItems = items.filter((item) => getRecordId(item.service));
+    if (!selectedCompany?._id && !formData.billedBy) {
+      throw new Error('Please select the company issuing this invoice.');
+    }
+
+    if (!selectedCustomer?._id && !formData.billedTo) {
+      throw new Error('Please select the customer for this invoice.');
+    }
+
+    if (validItems.length === 0) {
+      throw new Error('Please add at least one invoice line item with a service.');
+    }
 
     const payload = {
       ...(isEditing ? { invoiceNumber: formData.invoiceNumber } : { invoiceTrack: formData.invoiceTrack || 'structured' }),
@@ -284,12 +292,13 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
       status: formData.status || 'unpaid',
       termsConditions:formData.termsConditions,
       referenceNumber:formData.referenceNumber,
-      items: items,
+      items: validItems,
       enableTax,
       roundOffTotal,
       totalAmount:total,
       invoiceDate: formData?.invoiceDate || new Date(),
       dueDate: formData?.dueDate || undefined,
+      paidAt: formData.status === 'paid' ? (formData.paidAt || new Date().toISOString().slice(0, 10)) : null,
       paymentTerms: formData?.paymentTerms || 'Due on receipt',
       paymentMethod:formData?.paymentMethod || 'cash',
       reference: 'REF-123456', 
@@ -304,13 +313,14 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
     alert(`Invoice ${isEditing ? 'updated' : 'created'} successfully!`);
     getInvoices()
     loadQuotation()
-    // console.log(response);
 
     // Optionally reset form or close modal
     handleClose();
   } catch (err) {
     console.error('Failed to create invoice:', err);
-    setError(err.response?.data?.message || 'Failed to create quotation');
+    const message = err.response?.data?.message || err.message || 'Failed to create invoice';
+    setError(message);
+    alert(message);
   } finally {
     setLoading(false);
   }
@@ -421,6 +431,11 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
       </Modal.Header>
       <Modal.Body>
         <div className="container">
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
+            </div>
+          )}
           {/* Quotation Details */}
           <div className="mb-4">
             <h2 className="h5 mb-3 section-title">INVOICE Details</h2>
@@ -509,7 +524,11 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                         value={formData.status}
                         onChange={(e) => {
                             const value = e.target.value;
-                            setFormData({...formData, status: value});
+                            setFormData({
+                              ...formData,
+                              status: value,
+                              paidAt: value === 'paid' ? (formData.paidAt || new Date().toISOString().slice(0, 10)) : '',
+                            });
                           }}
                       >
 	                        <option value="">Select Status</option>
@@ -521,6 +540,21 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                       </Form.Select>
                     </Form.Group>
                   </Col>
+                  {formData.status === 'paid' && (
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label>Paid Date</Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={formData.paidAt}
+                          onChange={(e) => setFormData({ ...formData, paidAt: e.target.value })}
+                        />
+                        <Form.Text className="text-muted">
+                          This date is saved with the invoice payment status.
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                  )}
 
                   <Col md={6}>
                     <Form.Group>
@@ -564,7 +598,9 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                       >
 	                        <option value="">Select</option>
                         <option value="cash">Cash</option>
-                        <option value="check">Check</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="momo">MoMo</option>
+                        <option value="bank-transfer">Bank Transfer</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
@@ -785,14 +821,15 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                             </option>
                           ))}
                         </Form.Select>
-                        </td>
+                      </td>
                       <td>
-                        <Form.Control 
-                          as="textarea"
-                          rows={4}
-                          value={item.description}
-                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                        />
+                        <div className="line-item-rich-text">
+                          <RichTextEditor
+                            value={item.description}
+                            onChange={(value) => handleItemChange(index, 'description', value)}
+                            placeholder="Add scope, deliverables, notes, or service details..."
+                          />
+                        </div>
                       </td>
                       <td>
                         <Form.Control 

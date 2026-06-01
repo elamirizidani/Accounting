@@ -6,7 +6,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchData, insertData } from '../../../utility/api';
 import { useInvoiceStore } from '../../store/invoiceStore';
+import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
+const renderDocumentHtml = (value) => sanitizeHtml(value || '');
 
 const ToInvoice = ({ show, handleClose,quotation = {} }) => {
   const currencies = useMemo(() => [
@@ -488,7 +490,10 @@ const [invoiceData,setInvoiceData] =useState({
                         </Form.Select> */}
                         </td>
                       <td>
-                        {item.description}
+                        <div
+                          className="document-rich-text line-item-description"
+                          dangerouslySetInnerHTML={{ __html: renderDocumentHtml(item.description) }}
+                        />
                         {/* <Form.Control 
                           type="text" 
                           disabled

@@ -5,10 +5,13 @@ import barndMark from '../../assets/imgs/brandmark.png'
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
+const renderDocumentHtml = (value) => sanitizeHtml(value || '');
+
 const ViewQuatation = ({ show, handleClose, quotation }) => {
   const componentRef = React.useRef();
   const notesHtml = sanitizeHtml(quotation?.additionalNotes || '');
   const termsHtml = sanitizeHtml(quotation?.termsConditions || quotation?.termsAndConditions || '');
+  const isUsdProforma = String(quotation?.currency || '').toUpperCase() === 'USD';
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -204,7 +207,12 @@ const ViewQuatation = ({ show, handleClose, quotation }) => {
                       {/* <td>{index + 1}</td> */}
                       <td>{item?.code?.code}</td>
                       <td>{item?.service?.service}</td>
-                      <td>{item?.description}</td>
+                      <td>
+                        <div
+                          className="document-rich-text line-item-description"
+                          dangerouslySetInnerHTML={{ __html: renderDocumentHtml(item?.description) }}
+                        />
+                      </td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {
@@ -295,6 +303,12 @@ const ViewQuatation = ({ show, handleClose, quotation }) => {
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
               <div>
+                {isUsdProforma && (
+                  <div className='d-flex'>
+                    <strong style={{flex:1}}>SYMBOLIX USD: &nbsp;</strong>
+                    <strong style={{flex:2}}>Bank Of Kigali 1002611334113</strong>
+                  </div>
+                )}
                 <div className='d-flex'>
                   <strong style={{flex:1}}>Bank Name: &nbsp;</strong>
                   <strong style={{flex:2}}>Bank of Kigali</strong>

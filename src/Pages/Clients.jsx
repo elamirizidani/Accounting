@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button, Form, Modal, Spinner } from 'react-bootstrap';
-import { insertData } from '../../utility/api';
+import { insertData, updateData } from '../../utility/api';
 import { useClientsStore } from '../store/clientsStore';
 import {
   DocumentTable,
@@ -21,6 +21,7 @@ const emptyClient = {
 function Clients() {
   const [showModal, setShowModal] = useState(false);
   const [newClient, setNewClient] = useState(emptyClient);
+  const [selectedClient, setSelectedClient] = useState(null);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -42,17 +43,43 @@ function Clients() {
   const totalInvoices = clients.reduce((sum, client) => sum + Number(client?.summary?.totalInvoices || 0), 0);
   const outstanding = clients.reduce((sum, client) => sum + Number(client?.summary?.pendingIncome || 0), 0);
 
+  const openCreateModal = () => {
+    setSelectedClient(null);
+    setNewClient(emptyClient);
+    setShowModal(true);
+  };
+
+  const openEditModal = (client) => {
+    setSelectedClient(client);
+    setNewClient({
+      name: client?.name || '',
+      address: client?.address || '',
+      phone: client?.phone || '',
+      email: client?.email || '',
+    });
+    setShowModal(true);
+  };
+
+  const closeClientModal = () => {
+    setShowModal(false);
+    setSelectedClient(null);
+    setNewClient(emptyClient);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     try {
       setSaving(true);
-      await insertData('customers', newClient);
+      if (selectedClient?._id) {
+        await updateData(`customers/${selectedClient._id}`, newClient);
+      } else {
+        await insertData('customers', newClient);
+      }
       await reloadClients();
-      setNewClient(emptyClient);
-      setShowModal(false);
+      closeClientModal();
     } catch (error) {
-      alert(error?.response?.data?.message || 'Failed to create client');
+      alert(error?.response?.data?.message || `Failed to ${selectedClient ? 'update' : 'create'} client`);
     } finally {
       setSaving(false);
     }
@@ -65,7 +92,7 @@ function Clients() {
         title="Clients"
         description="Keep client data, billing history, and outstanding amounts in one trusted workspace."
         actions={(
-          <button className="btn btn-primary" type="button" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" type="button" onClick={openCreateModal}>
             <i className="bi bi-person-plus me-2" />
             New Client
           </button>
@@ -129,17 +156,37 @@ function Clients() {
               className: 'text-end',
               render: (client) => client?.summary?.totalInvoices || 0,
             },
+            {
+              key: 'actions',
+              label: '',
+              className: 'text-end ops-action-cell',
+              render: (client) => (
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  onClick={() => openEditModal(client)}
+                >
+                  Edit
+                </button>
+              ),
+            },
           ]}
           empty={<EmptyState title="No clients found" description="Add a client before creating proformas, LPOs, or invoices." />}
         />
       </section>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={showModal} onHide={closeClientModal} centered>
         <Form onSubmit={handleSubmit}>
           <Modal.Header closeButton>
-            <Modal.Title>Add Client</Modal.Title>
+            <Modal.Title>{selectedClient ? 'Edit Client' : 'Add Client'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            {selectedClient?.customerCode && (
+              <Form.Group className="mb-3">
+                <Form.Label>Client ID</Form.Label>
+                <Form.Control value={selectedClient.customerCode} disabled readOnly />
+              </Form.Group>
+            )}
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
               <Form.Control
@@ -177,9 +224,9 @@ function Clients() {
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button variant="outline-secondary" onClick={closeClientModal}>Cancel</Button>
             <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? <Spinner size="sm" /> : 'Save Client'}
+              {saving ? <Spinner size="sm" /> : selectedClient ? 'Update Client' : 'Save Client'}
             </Button>
           </Modal.Footer>
         </Form>

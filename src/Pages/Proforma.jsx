@@ -67,11 +67,15 @@ function Proforma() {
     setShowChangeToInvoice(true);
   };
 
-  const deleteQuotation = async (id) => {
-    if (!window.confirm('Delete this proforma? This cannot be undone.')) return;
+  const deleteQuotation = async (proforma) => {
+    const message = proforma?.convertedToInvoice
+      ? 'Delete this proforma and its linked invoice? This cannot be undone.'
+      : 'Delete this proforma? This cannot be undone.';
+
+    if (!window.confirm(message)) return;
 
     try {
-      await deleteData('quotation', id);
+      await deleteData('quotation', proforma._id);
       await loadQuotation();
     } catch (error) {
       alert(error?.response?.data?.message || 'Failed to delete proforma');
@@ -163,7 +167,7 @@ function Proforma() {
                   <button className="btn btn-outline-secondary" type="button" onClick={() => handleView(proforma)}>View</button>
                   <button className="btn btn-outline-secondary" type="button" onClick={() => handleEdit(proforma)}>Edit</button>
                   <button className="btn btn-outline-primary" type="button" onClick={() => handleConvert(proforma)}>Invoice</button>
-                  <button className="btn btn-outline-danger" type="button" onClick={() => deleteQuotation(proforma._id)}>Delete</button>
+                  <button className="btn btn-outline-danger" type="button" onClick={() => deleteQuotation(proforma)}>Delete</button>
                 </div>
               ),
             },

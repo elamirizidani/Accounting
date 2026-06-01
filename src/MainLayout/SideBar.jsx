@@ -1,13 +1,13 @@
-import React,{useState} from 'react';
-import { Button, Nav } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Nav } from 'react-bootstrap';
 import siteLogo from '../assets/imgs/agencyLogo.png'
 import phoneLogo from '../assets/imgs/phoneLogo.png'
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 
-const SideBar = () => {
-    const {logout,changeShowMenuLabel,showMenuLabel} = useAuthStore()
+const SideBar = ({ mobileOpen = false, onCloseMobile }) => {
+  const { logout, changeShowMenuLabel, showMenuLabel } = useAuthStore()
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState({});
   const menuItems = [
@@ -36,18 +36,37 @@ const SideBar = () => {
     }));
   };
 
+  const handleNavigate = () => {
+    if (onCloseMobile) onCloseMobile();
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleNavigate();
+  };
 
   return (
-      <div className={`sidebar ${showMenuLabel? 'p-3':'p-1'} `} id="sidebar" style={{ width: showMenuLabel ? '250px':'70px' }}>
+    <>
+      <button
+        type="button"
+        className={`sidebar-backdrop ${mobileOpen ? 'show' : ''}`}
+        onClick={onCloseMobile}
+        aria-label="Close navigation menu"
+      />
+      <aside
+        className={`sidebar ${showMenuLabel ? 'sidebar--expanded' : 'sidebar--collapsed'} ${mobileOpen ? 'sidebar--mobile-open' : ''}`}
+        id="sidebar"
+        aria-label="Primary navigation"
+      >
         <div className="logo">
           {
             showMenuLabel ?
-            <img src={siteLogo} alt="" style={{}}/>
+            <img src={siteLogo} alt="Symbolix" />
             :
-            <img src={phoneLogo} alt="" style={{width:'30px'}}/>
+            <img src={phoneLogo} alt="Symbolix" />
           }
         </div>
-        <Nav className="flex-column text-white" >
+        <Nav className="sidebar-nav flex-column">
     
         {menuItems.map((item) => (
         <div key={item.path}>
@@ -55,38 +74,44 @@ const SideBar = () => {
             {
               item.isLink ?(
                 <Nav.Link
-                  {...(!showMenuLabel && location.pathname === item.path) && { style: { margin: 0 }}}
                   as={Link}
                   to={item.path}
                   active={location.pathname === item.path}
-                  onClick={() => item.subMenu && toggleSubMenu(item.path)}
-                  className="mb-2 d-flex justify-content-between align-items-center"
+                  aria-label={!showMenuLabel ? item.label : undefined}
+                  title={!showMenuLabel ? item.label : undefined}
+                  onClick={() => {
+                    if (item.subMenu) toggleSubMenu(item.path);
+                    handleNavigate();
+                  }}
+                  className="sidebar-link"
                 >
-                  <div>
-                    <i className={`bi ${item.icon} me-2`}></i>
-                    {showMenuLabel && item.label}
-                  </div>
+                  <span className="sidebar-link-content">
+                    <i className={`bi ${item.icon}`}></i>
+                    <span className="sidebar-link-label">{item.label}</span>
+                  </span>
                   {item.subMenu && (
                     <i className={`bi bi-chevron-${openMenus[item.path] ? 'up' : 'down'}`}></i>
                   )}
                 </Nav.Link>
                 ):(
-                  <div
+                  <button
+                    type="button"
                     onClick={() => {
-                        if (item.fnToCall) item.fnToCall();
+                        if (item.fnToCall) handleLogout();
                         if (item.subMenu) toggleSubMenu(item.path);
                     }}
-                    className="nav-link mb-2 d-flex justify-content-between align-items-center"
-                    style={{ cursor: 'pointer' }}
+                    aria-label={!showMenuLabel ? item.label : undefined}
+                    title={!showMenuLabel ? item.label : undefined}
+                    className="nav-link sidebar-link sidebar-action"
                   >
-                    <div>
-                        <i className={`bi ${item.icon} me-2`}></i>
-                        {showMenuLabel && item.label}
-                    </div>
+                    <span className="sidebar-link-content">
+                      <i className={`bi ${item.icon}`}></i>
+                      <span className="sidebar-link-label">{item.label}</span>
+                    </span>
                     {item.subMenu && (
                         <i className={`bi bi-chevron-${openMenus[item.path] ? 'up' : 'down'}`}></i>
                     )}
-                </div>
+                </button>
               )
             }
             
@@ -99,7 +124,8 @@ const SideBar = () => {
                   as={Link}
                   to={sub.path}
                   key={sub.path}
-                  className={`mb-1 ${location.pathname === sub.path ? 'active fw-bold' : ''}`}
+                  onClick={handleNavigate}
+                  className={`sidebar-sub-link ${location.pathname === sub.path ? 'active fw-bold' : ''}`}
                 >
                   {sub.label}
                 </Nav.Link>
@@ -110,8 +136,8 @@ const SideBar = () => {
       ))}
 
     </Nav>
-    <div className="navbar-vertical-footer position-fixed">
-      <button onClick={()=>changeShowMenuLabel()} className="btn navbar-vertical-toggle border-0 fw-semibold w-100 white-space-nowrap d-flex align-items-center">
+    <div className="navbar-vertical-footer">
+      <button onClick={()=>changeShowMenuLabel()} className="navbar-vertical-toggle" type="button">
         {
           showMenuLabel ? <i className="bi bi-box-arrow-in-left"></i>:<i className="bi bi-box-arrow-in-right"></i>
         }
@@ -121,12 +147,12 @@ const SideBar = () => {
         
       </button>
     </div>
-  </div>
+  </aside>
+  </>
   );
 };
 
 export default SideBar;
-
 
 
 

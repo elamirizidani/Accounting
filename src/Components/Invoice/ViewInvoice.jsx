@@ -5,9 +5,12 @@ import moment from 'moment';
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
+const renderDocumentHtml = (value) => sanitizeHtml(value || '');
+
 const ViewInvoice = ({ show, handleClose, invoice }) => {
   const componentRef = React.useRef();
   const invoiceTermsHtml = sanitizeHtml(invoice?.quotation?.termsConditions || invoice?.quotation?.termsAndConditions || '');
+  const isUsdInvoice = String(invoice?.quotation?.currency || '').toUpperCase() === 'USD';
 
   function numberToWords(num) {
   if (num === 0) return "zero";
@@ -138,6 +141,9 @@ const ViewInvoice = ({ show, handleClose, invoice }) => {
                 <h2 className="colored-text">{invoice?.invoiceNumber}</h2>
                 <p className="fw-bold mb-1"><strong>Due date: </strong> {moment(invoice?.dueDate).format('DD MMM YYYY')}</p>
                 <p className="fw-bold mb-1"><strong>Date:</strong> {moment(invoice?.invoiceDate).format('DD MMM YYYY')}</p>
+                {invoice?.status === 'paid' && (
+                  <p className="fw-bold mb-1"><strong>Paid:</strong> {invoice?.paidAt ? moment(invoice?.paidAt).format('DD MMM YYYY') : 'Date not set'}</p>
+                )}
                 {/* <p className="mb-1"><strong>Status:</strong> <span className="text-capitalize">{invoice?.quotation?.status}</span></p> */}
               </div>
             </div>
@@ -173,7 +179,12 @@ const ViewInvoice = ({ show, handleClose, invoice }) => {
                     <tr key={index}>
                       <td>{item?.code?.code}</td>
                       <td>{item?.service?.service}</td>
-                      <td>{item?.description}</td>
+                      <td>
+                        <div
+                          className="document-rich-text line-item-description"
+                          dangerouslySetInnerHTML={{ __html: renderDocumentHtml(item?.description) }}
+                        />
+                      </td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {
@@ -259,6 +270,12 @@ const ViewInvoice = ({ show, handleClose, invoice }) => {
             <div className="card p-3 my-4 col-md-4 rounded-4">
               <h6 className="mb-1 colored-text">BANK DETAILS</h6>
               <div>
+                {isUsdInvoice && (
+                  <div className='d-flex'>
+                    <strong style={{flex:1}}>SYMBOLIX USD: &nbsp;</strong>
+                    <strong style={{flex:2}}>Bank Of Kigali 1002611334113</strong>
+                  </div>
+                )}
                 <div className='d-flex'>
                   <strong style={{flex:1}}>Bank Name: &nbsp;</strong>
                   <strong style={{flex:2}}>Bank of Kigali</strong>

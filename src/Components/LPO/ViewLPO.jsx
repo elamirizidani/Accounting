@@ -5,6 +5,8 @@ import barndMark from '../../assets/imgs/brandmark.png'
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
 import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
+const renderDocumentHtml = (value) => sanitizeHtml(value || '');
+
 const ViewLPO = ({ show, handleClose, quotation }) => {
   const componentRef = React.useRef();
   const notesHtml = sanitizeHtml(quotation?.additionalNotes || '');
@@ -203,7 +205,12 @@ const ViewLPO = ({ show, handleClose, quotation }) => {
                       {/* <td>{index + 1}</td> */}
                       <td>{item?.code?.code}</td>
                       <td>{item?.service?.service}</td>
-                      <td>{item?.description}</td>
+                      <td>
+                        <div
+                          className="document-rich-text line-item-description"
+                          dangerouslySetInnerHTML={{ __html: renderDocumentHtml(item?.description) }}
+                        />
+                      </td>
                       <td className="text-end">{item?.quantity}</td>
                       <td className="text-end">{item?.unitCost?.toLocaleString()}</td>
                       {

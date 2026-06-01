@@ -722,12 +722,13 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
 
                                                         </td>
                                                         <td>
-                                                            <Form.Control
-                                                                as="textarea"
-                                                                rows={4}
-                                                                value={item.description}
-                                                                onChange={(e) => handleItemChange(index, 'description', e.target.value, enableTax)}
-                                                            />
+                                                            <div className="line-item-rich-text">
+                                                                <RichTextEditor
+                                                                    value={item.description}
+                                                                    onChange={(value) => handleItemChange(index, 'description', value, enableTax)}
+                                                                    placeholder="Add scope, deliverables, notes, or service details..."
+                                                                />
+                                                            </div>
                                                         </td>
                                                         <td>
                                                             <Form.Control
