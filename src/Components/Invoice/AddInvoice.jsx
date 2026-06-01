@@ -3,16 +3,56 @@ import { Modal, Button, Form, Table,Spinner, Row, Col, Card } from 'react-bootst
 import '../create.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { fetchData, insertData } from '../../../utility/api';
+import { fetchData, insertData, updateData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
 import { useInvoiceStore } from '../../store/invoiceStore';
 import { useAuthStore } from '../../store/authStore';
 import AddServiceCode from '../ReUsable/AddServiceCode';
 import { useServicesStore } from '../../store/servicesStore';
+import RichTextEditor from '../ReUsable/RichTextEditor';
+
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+};
+
+const getRecordId = (value) => value?._id || value || '';
+
+const normalizeItemsForForm = (items = []) => items.map((item) => ({
+  ...item,
+  service: getRecordId(item.service),
+  code: getRecordId(item.code),
+  codeName: item.codeName || item.code?.code || '',
+}));
+
+const buildInvoiceFormData = (invoice = {}) => {
+  const quotation = invoice?.quotation || {};
+
+  return {
+    invoiceNumber: invoice?.invoiceNumber || '',
+    invoiceTrack: invoice?.invoiceTrack || 'structured',
+    status: invoice?.status || 'unpaid',
+    paymentMethod: invoice?.paymentMethod || '',
+    paymentTerms: invoice?.paymentTerms || '',
+    invoiceDate: toDateInputValue(invoice?.invoiceDate || quotation?.quotationDate || new Date()),
+    dueDate: toDateInputValue(invoice?.dueDate),
+    billedBy: getRecordId(quotation?.billedBy || invoice?.billedBy),
+    billedTo: getRecordId(quotation?.billedTo || invoice?.billedTo),
+    currency: quotation?.currency || invoice?.currency || 'RWF',
+    termsConditions: quotation?.termsConditions || invoice?.termsConditions || '',
+    referenceNumber: quotation?.referenceNumber || invoice?.referenceNumber || '',
+    items: normalizeItemsForForm(quotation?.items || invoice?.items || []),
+    enableTax: quotation?.enableTax ?? invoice?.enableTax ?? true,
+    roundOffTotal: quotation?.roundOffTotal ?? invoice?.roundOffTotal ?? true,
+  };
+};
 
 
 const AddInvoice = ({ show, handleClose,invoice = {} }) => {
+  const isEditing = Boolean(invoice?._id);
   const {getInvoices} = useInvoiceStore()
   const {serviceCodes,getServiceCodes} = useServicesStore()
   const {loadQuotation} = useAuthStore()
@@ -44,36 +84,38 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
       subBrand:""
     })
 
-  const [enableTax, setEnableTax] = useState(true);
-  const [addDueDate, setAddDueDate] = useState(false);
-  const [roundOffTotal, setRoundOffTotal] = useState(true);
-  const [items, setItems] = useState(invoice?.items ||[]);
+  const initialFormData = buildInvoiceFormData(invoice);
+  const initialQuotation = invoice?.quotation || invoice || {};
+  const [enableTax, setEnableTax] = useState(initialFormData.enableTax);
+  const [addDueDate, setAddDueDate] = useState(Boolean(initialFormData.dueDate));
+  const [roundOffTotal, setRoundOffTotal] = useState(initialFormData.roundOffTotal);
+  const [items, setItems] = useState(initialFormData.items);
   const [customers,setCustomers] = useState([])
   const [companies,setCompanies] = useState([])
   const [services,setServices] = useState([])
-  const [selectedCustomer,setSelectedCustomer] = useState(invoice?.billedTo||{})
-  const [selectedCompany,setSelectedCompany] = useState(invoice?.billedBy||{})
-  const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === invoice?.currency)||{})
+  const [selectedCustomer,setSelectedCustomer] = useState(initialQuotation?.billedTo || {})
+  const [selectedCompany,setSelectedCompany] = useState(initialQuotation?.billedBy || {})
+  const [selectedCurrency,setSelectedCurrency] = useState(currencies?.find(currency=>currency?.name === initialFormData.currency)||{})
   const [showCodeForm, setShowCodeForm] = useState(false);
   const [showClientForm, setShowClientForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
 
 
   useEffect(() => {
   if (invoice) {
-    setFormData({
-      ...invoice,
-      items: invoice.items || [],
-      enableTax: invoice.enableTax ?? true,
-      roundOffTotal: invoice.roundOffTotal ?? true
-    });
-    
-    setItems(invoice.items || []);
-    setSelectedCustomer(invoice.billedTo || {});
-    setSelectedCompany(invoice.billedBy || {});
-    setSelectedCurrency(currencies.find(currency => currency?.name === invoice?.currency) || {});
+    const nextFormData = buildInvoiceFormData(invoice);
+    const nextQuotation = invoice?.quotation || invoice || {};
+
+    setFormData(nextFormData);
+    setEnableTax(nextFormData.enableTax);
+    setRoundOffTotal(nextFormData.roundOffTotal);
+    setAddDueDate(Boolean(nextFormData.dueDate));
+    setItems(nextFormData.items);
+    setSelectedCustomer(nextQuotation?.billedTo || {});
+    setSelectedCompany(nextQuotation?.billedBy || {});
+    setSelectedCurrency(currencies.find(currency => currency?.name === nextFormData.currency) || {});
   }
 }, [invoice,currencies]);
 
@@ -111,12 +153,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
   // });
 
 
-  const [formData, setFormData] = useState({
-    ...invoice,
-    items: invoice?.items || [],
-    enableTax: invoice?.enableTax ?? true,
-    roundOffTotal: invoice?.roundOffTotal ?? true
-  })
+  const [formData, setFormData] = useState(initialFormData)
 
 
       const readCustomers = async ()=>{
@@ -124,7 +161,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
           const res = await fetchData('customers')
           setCustomers(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load customers:', error);
         }
       }
       const readCompanies = async ()=>{
@@ -132,7 +169,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
           const res = await fetchData('companies')
           setCompanies(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load companies:', error);
         }
       }
       const readServices = async ()=>{
@@ -140,7 +177,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
           const res = await fetchData('services')
           setServices(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load services:', error);
         }
       }
       useEffect(()=>{
@@ -240,27 +277,31 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
     setLoading(true);
 
     const payload = {
-      billedBy: selectedCompany?._id,
-      billedTo: selectedCustomer?._id,
-      currency:formData.currency,
-      status:'approved',
-      invoiceStatus:formData.status,
+      ...(isEditing ? { invoiceNumber: formData.invoiceNumber } : { invoiceTrack: formData.invoiceTrack || 'structured' }),
+	      billedBy: selectedCompany?._id || formData.billedBy,
+	      billedTo: selectedCustomer?._id || formData.billedTo,
+	      currency:formData.currency || 'RWF',
+      status: formData.status || 'unpaid',
       termsConditions:formData.termsConditions,
       referenceNumber:formData.referenceNumber,
       items: items,
       enableTax,
       roundOffTotal,
       totalAmount:total,
-      invoiceDate: formData?.quotationDate,
+      invoiceDate: formData?.invoiceDate || new Date(),
+      dueDate: formData?.dueDate || undefined,
+      paymentTerms: formData?.paymentTerms || 'Due on receipt',
       paymentMethod:formData?.paymentMethod || 'cash',
       reference: 'REF-123456', 
       notes: '',
     };
 
-// console.log(JSON.stringify(payload))
-
-    const response = await insertData('invoice',payload);
-    alert('Invoice created successfully!');
+    if (isEditing) {
+      await updateData(`invoice/${invoice._id}`, payload);
+    } else {
+      await insertData('invoice',payload);
+    }
+    alert(`Invoice ${isEditing ? 'updated' : 'created'} successfully!`);
     getInvoices()
     loadQuotation()
     // console.log(response);
@@ -268,7 +309,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
     // Optionally reset form or close modal
     handleClose();
   } catch (err) {
-    console.log(err)
+    console.error('Failed to create invoice:', err);
     setError(err.response?.data?.message || 'Failed to create quotation');
   } finally {
     setLoading(false);
@@ -376,7 +417,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
       <div className="quotation-modal">
         <Form onSubmit={handleSubmit}>
       <Modal.Header closeButton>
-        <Modal.Title>INVOICE</Modal.Title>
+        <Modal.Title>{isEditing ? 'Edit Invoice' : 'New Invoice'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="container">
@@ -386,23 +427,31 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
 
             <Row className='justify-content-between'>
               <Col md={4}>
-                {/* <div className="row g-3">
-                  <div className="col-md-6">
-                    <Form.Group>
-                      <Form.Label>INVOICE ID</Form.Label>
-                      <Form.Control type="text" value={generateQuotationId()} readOnly disabled/>
-                    </Form.Group>
-                  </div>
-                </div> */}
+                <div className="col-md-12 mt-3">
+                  <Form.Group>
+                    <Form.Label>Invoice Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={isEditing ? formData.invoiceNumber : 'Generated automatically on save'}
+                      disabled={!isEditing}
+                      onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                    />
+                    <Form.Text className="text-muted">
+                      {isEditing
+                        ? 'You can manually correct the invoice number. Duplicate numbers are blocked.'
+                        : 'Structured and unstructured counters are reserved when the invoice is issued.'}
+                    </Form.Text>
+                  </Form.Group>
+                </div>
                 <div className="col-md-12 mt-3">
                   <Form.Group>
                     <Form.Label>INVOICE Date</Form.Label>
                     <div className="d-flex align-items-center">
                       <Form.Control type="date" 
-                      value={formData.quotationDate}
+                      value={formData.invoiceDate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData({...formData, quotationDate: value});
+                          setFormData({...formData, invoiceDate: value});
                         }}
                       />
                     </div>
@@ -422,10 +471,10 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                   {
                     addDueDate && <div className="d-flex align-items-center">
                     <Form.Control type="date" 
-                      value={formData.quotationDate}
+                      value={formData.dueDate}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData({...formData, quotationDate: value});
+                          setFormData({...formData, dueDate: value});
                         }}
                       />
                   </div>
@@ -435,9 +484,27 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
 
               <Col md={4}>
                 <Row>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Select Status</Form.Label>
+	                  <Col md={6}>
+	                    <Form.Group>
+	                      <Form.Label>Numbering Track</Form.Label>
+	                      <Form.Select
+	                        value={formData.invoiceTrack || 'structured'}
+                          disabled={isEditing}
+	                        onChange={(e) => {
+	                            setFormData({...formData, invoiceTrack: e.target.value});
+	                          }}
+	                      >
+	                        <option value="structured">Structured</option>
+	                        <option value="unstructured">Unstructured</option>
+	                      </Form.Select>
+	                      <Form.Text className="text-muted">
+	                        {isEditing ? 'Track is locked after issue. Edit the invoice number if correction is needed.' : 'Tracks keep official invoice numbers independent.'}
+	                      </Form.Text>
+	                    </Form.Group>
+	                  </Col>
+	                  <Col md={6}>
+	                    <Form.Group>
+	                      <Form.Label>Select Status</Form.Label>
                       <Form.Select
                         value={formData.status}
                         onChange={(e) => {
@@ -445,7 +512,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                             setFormData({...formData, status: value});
                           }}
                       >
-                        <option>Select Status</option>
+	                        <option value="">Select Status</option>
                         <option value="draft">Draft</option>
                         <option value="unpaid">Unpaid</option>
                         <option value="paid">Paid</option>
@@ -463,12 +530,14 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                         onChange={ async(e) => {
                             const value = e.target.value;
                             const selectedOption = e.target.options[e.target.selectedIndex];
-                            const fullCurrency = JSON.parse(selectedOption.dataset.currency);
+	                            const fullCurrency = selectedOption.dataset.currency
+                                ? JSON.parse(selectedOption.dataset.currency)
+                                : {};
                             setSelectedCurrency(fullCurrency);
                             setFormData({...formData, currency: value});
                           }}
                           >
-                        <option>Select Currency</option>
+	                        <option value="">Select Currency</option>
                         {
                           currencies?.map(currency=>(
                             <option 
@@ -493,7 +562,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                             setFormData({...formData, paymentMethod: value});
                           }}
                       >
-                        <option>Select</option>
+	                        <option value="">Select</option>
                         <option value="cash">Cash</option>
                         <option value="check">Check</option>
                       </Form.Select>
@@ -528,16 +597,18 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                   <Form.Label>Billed By</Form.Label>
                 
                   <Form.Select
+                    value={selectedCompany?._id || formData.billedBy || ''}
                     onChange={(e) => {
                       const selectedId = e.target.value;
                       if(selectedId && selectedId?.toLowerCase()!== "select")
                       {
                         const selected = companies.find(c => c._id === selectedId);
                         setSelectedCompany(selected);
+                        setFormData({...formData, billedBy: selectedId});
                       }
                     }}
                   >
-                    <option>Select</option>
+                    <option value="">Select</option>
                     {companies?.map((company) => (
                       <option key={company._id} value={company._id}>
                         {company.name}
@@ -568,11 +639,11 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                     
                     <Form.Select 
                       className="me-2"
-                      value={formData.billedTo}
+                      value={selectedCustomer?._id || formData.billedTo || ''}
                       onChange={(e) => {
                         const selectedId = e.target.value;
                          if(selectedId && selectedId?.toLowerCase()!== "select")
-                         {
+                        {
                           const selected = customers.find(c => c._id === selectedId);
                           setSelectedCustomer(selected);
                           setFormData({...formData, billedTo: selectedId});
@@ -699,7 +770,7 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
                     <tr key={index}>
                       <td>
                         <Form.Select
-                          value={item.service}
+                          value={item.service?._id || item.service || ''}
                           onChange={(e) => {
                             const { value } = e.target;
                             if (value && value.toLowerCase() !== "select") {
@@ -769,12 +840,10 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
               </div>
               <Form.Group>
                 <Form.Label>Terms & Conditions</Form.Label>
-                <Form.Control as="textarea" rows={3} placeholder="Enter Terms & Conditions..."
+                <RichTextEditor
                   value={formData.termsConditions}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({...formData, termsConditions: value});
-                  }}
+                  onChange={(value) => setFormData({...formData, termsConditions: value})}
+                  placeholder="Example: Payment due within 15 days. Late payments may pause service delivery."
                 />
               </Form.Group>
             </div>
@@ -859,10 +928,10 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Creating...
+                  {isEditing ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                'Save Quotation'
+	                isEditing ? 'Save Invoice' : 'Issue Invoice'
               )}
             </Button>
 
@@ -902,6 +971,3 @@ const AddInvoice = ({ show, handleClose,invoice = {} }) => {
 
 
 export default AddInvoice;
-
-
-

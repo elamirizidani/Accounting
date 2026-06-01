@@ -1,7 +1,6 @@
 import axios from "axios";
 
-let API_BASE_URL = "https://accounting-backend-usua.onrender.com/api/";
-// let API_BASE_URL = 'http://localhost:5001/api/';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api/";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,21 +10,32 @@ const api = axios.create({
   timeout: 300000,
 });
 
+const getStoredToken = () => sessionStorage.getItem('token') || localStorage.getItem('token');
+
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
+  const token = getStoredToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-export async function login(email, password) {
-  const res = await api.post('auth/login', { email:email, password:password });
-  console.log(res)
-  if (res.status === 200 && res.data.token) {
-    localStorage.setItem('token', res.data.token);
+export async function login(email, password, options = {}) {
+  try {
+    const res = await api.post('auth/login', { email:email, password:password });
+    if (res.status === 200 && res.data.token) {
+      const storage = options.rememberMe ? localStorage : sessionStorage;
+      const otherStorage = options.rememberMe ? sessionStorage : localStorage;
+      storage.setItem('token', res.data.token);
+      otherStorage.removeItem('token');
+    }
+    return res.data;
+  } catch (error) {
+    return {
+      status: false,
+      message: error.response?.data?.message || 'Unable to sign in. Please check your credentials.',
+    };
   }
-  return res.data;
 }
 
 
@@ -50,6 +60,7 @@ export async function insertData(endpoint, payload) {
 // Logout helper to clear token
 export function logout() {
   localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
   // optionally redirect user to login page
 }
 
@@ -60,11 +71,11 @@ export const updateData = async (endpoint,data)=>{
 
 
 export const updateDatas = async (endpoint, data) => {
-  const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+      'Authorization': `Bearer ${getStoredToken()}`
     },
     body: JSON.stringify(data)
   });

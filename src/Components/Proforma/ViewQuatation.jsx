@@ -3,10 +3,12 @@ import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
 import siteLogo from '../../assets/imgs/agencyLogo.png'
 import barndMark from '../../assets/imgs/brandmark.png'
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
+import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
 const ViewQuatation = ({ show, handleClose, quotation }) => {
-  // console.log(quotation)
   const componentRef = React.useRef();
+  const notesHtml = sanitizeHtml(quotation?.additionalNotes || '');
+  const termsHtml = sanitizeHtml(quotation?.termsConditions || quotation?.termsAndConditions || '');
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -52,10 +54,6 @@ const ViewQuatation = ({ show, handleClose, quotation }) => {
 }
   
 
-const handlePDFSuccess = (result) => {
-    console.log('PDF generated successfully:', result.filename);
-  };
-
   const handlePDFError = (error) => {
     console.error('PDF generation failed:', error);
     alert('Failed to generate PDF. Please try again.');
@@ -79,7 +77,7 @@ const handlePDFSuccess = (result) => {
           return Array.from(styleSheet.cssRules)
             .map(rule => rule.cssText)
             .join('\n');
-        } catch (e) {
+        } catch {
           // Handle cross-origin stylesheets
           return '';
         }
@@ -287,10 +285,10 @@ const handlePDFSuccess = (result) => {
 
             {/* Amount in Words */}
 
-            {quotation?.additionalNotes && (
+            {notesHtml && (
               <div className="mt-4 bordered-left px-2">
                 <h5 className="mb-2">Notes:</h5>
-                <div className="text-muted" dangerouslySetInnerHTML={{ __html: quotation?.additionalNotes }} />
+                <div className="text-muted document-rich-text" dangerouslySetInnerHTML={{ __html: notesHtml }} />
               </div>
             )}
 
@@ -317,10 +315,10 @@ const handlePDFSuccess = (result) => {
             </div>
 
             {/* Terms and Conditions */}
-            {quotation?.termsAndConditions && (
+            {termsHtml && (
               <div className="mt-4">
                 <h5 className="mb-2">Terms & Conditions</h5>
-                <div className="text-muted" dangerouslySetInnerHTML={{ __html: quotation?.termsAndConditions }} />
+                <div className="text-muted document-rich-text" dangerouslySetInnerHTML={{ __html: termsHtml }} />
               </div>
             )}
 
@@ -355,9 +353,9 @@ const handlePDFSuccess = (result) => {
         <Button variant="outline-secondary" onClick={handleClose}>
           Close
         </Button>
-        {/* <Button variant="outline-primary" onClick={handlePrintToPDF} className="me-2">
+        <Button variant="outline-primary" onClick={handlePrintToPDF} className="me-2">
           Print
-        </Button> */}
+        </Button>
         {/* <Button variant="primary" onClick={handleDownloadPDF}>
           Download PDF
         </Button> */}
@@ -366,7 +364,6 @@ const handlePDFSuccess = (result) => {
           filename={`Quotation_${quotation?.quotationId || 'Unknown'}_${quotation?.billedTo?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Customer'}.pdf`}
           buttonText="Download PDF"
           variant="primary"
-          onSuccess={handlePDFSuccess}
           onError={handlePDFError}
           pdfOptions={{
             scale: 2,

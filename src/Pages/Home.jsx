@@ -1,175 +1,172 @@
-import React from 'react'
-import { useInvoiceStore } from '../store/invoiceStore';
-import moment from 'moment';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { useInvoiceStore } from '../store/invoiceStore';
 import { useAuthStore } from '../store/authStore';
+import {
+  DocumentTable,
+  EmptyState,
+  MetricCard,
+  PageHeader,
+  StatusBadge,
+  WorkflowSteps,
+  formatDate,
+  formatMoney,
+} from '../Components/Operations/OperationsUI';
 
 function Home() {
-    const {invoices} = useInvoiceStore()
-    const {quotation} = useAuthStore()
+  const {
+    invoices = [],
+    totalInvoice,
+    totalPaidAmount,
+    totalAmountExceptDraft,
+    loadingInvoice,
+  } = useInvoiceStore();
+  const { quotation, lpos } = useAuthStore();
+  const proformas = Array.isArray(quotation) ? quotation : [];
+  const purchaseOrders = Array.isArray(lpos) ? lpos : [];
+
+  const overdueCount = invoices.filter((invoice) => invoice.status === 'overdue').length;
+  const draftCount = invoices.filter((invoice) => invoice.status === 'draft').length;
+  const recentInvoices = invoices.slice(0, 5).map((invoice) => ({
+    key: invoice._id,
+    raw: invoice,
+  }));
 
   return (
-    <>
-    <div className="main-header">
-            <h2>Dashboard</h2>
-            <div className="header-actions">
-                <button className="btn btn-create">Create New <i className="bi bi-chevron-down"></i></button>
-                <button className="btn btn-export"><i className="bi bi-upload"></i> Export</button>
+    <div className="ops-page">
+      <PageHeader
+        eyebrow="Business command center"
+        title="Dashboard"
+        description="Track the full commercial workflow from client request to paid invoice."
+        actions={(
+          <>
+            <Link to="/Proforma" className="btn btn-outline-secondary">
+              <i className="bi bi-file-earmark-plus me-2" />
+              New Proforma
+            </Link>
+            <Link to="/Invoices" className="btn btn-primary">
+              <i className="bi bi-receipt me-2" />
+              Issue Invoice
+            </Link>
+          </>
+        )}
+      />
 
-                 <div className="dropdown" id="dateDropdown">
-                    <button className="btn calenda-bt" id="toggleDropdown">
-                    <i className="bi bi-calendar4-week"></i> 
-                    <span>16 Jun 25 - 16 Jun 25</span>
-                    </button>
-                     
-                    <div className="dropdown-content">
-                    <i className="bi bi-caret-up-fill "></i>
-                    <a href="#">Today</a>
-                    <a href="#">Yesterday</a>
-                    <a href="#">Last 7 Days</a>
-                    <a href="#">Last 30 Days</a>
-                    <a href="#">This Month</a>
-                    <a href="#">Last Month</a>
-                    <a href="#">Custom Range</a>
-                    </div>
-                </div>
-                
+      <div className="ops-metric-grid">
+        <MetricCard
+          label="Issued invoices"
+          value={totalInvoice || invoices.length || 0}
+          helper={`${draftCount} draft documents still need review`}
+          icon="bi-receipt"
+          tone="primary"
+        />
+        <MetricCard
+          label="Invoice value"
+          value={formatMoney(totalAmountExceptDraft)}
+          helper="Excludes draft invoices"
+          icon="bi-cash-stack"
+          tone="success"
+        />
+        <MetricCard
+          label="Paid amount"
+          value={formatMoney(totalPaidAmount)}
+          helper="Recognized paid revenue"
+          icon="bi-check2-circle"
+          tone="success"
+        />
+        <MetricCard
+          label="Attention needed"
+          value={overdueCount}
+          helper="Overdue invoices requiring follow-up"
+          icon="bi-exclamation-triangle"
+          tone="danger"
+        />
+      </div>
+
+      <div className="ops-two-column">
+        <section className="ops-panel">
+          <div className="ops-panel-header">
+            <div>
+              <h2>Recent Invoices</h2>
+              <p>Most recent issued documents and payment status.</p>
             </div>
-        </div>
-        
-    <div className="content-area">
-        
-            <div className="stats-row">
-                <div className="stat-card">
-                    <div className="stat-content d-flex justify-content-between">
-                        <div className="price-sec">
-                        <p className="stat-label">Amount Due</p>
-                        <h3 className="stat-value">25,225,000</h3>
-                        </div>
-                        <div className="stat-icon purple">
-                           <img src="./assets/image/1.svg" alt=""/> 
-                        </div>
-                    </div>
-                        <div className="stat-change d-flex justify-content-center py-2"><span>
-                            <img src="./assets/image/4.svg" alt=""/>
-                             5.65%</span> from last month</div>
-                    
-                </div>
-                <div className="stat-card">
-                    <div className="stat-content d-flex justify-content-between">
-                        <div className="price-sec">
-                        <p className="stat-label">Customers</p>
-                        <h3 className="stat-value">25,225,000</h3>
-                        </div>
-                        <div className="stat-icon green">
-                           <i className="bi bi-clock"></i>
-                        </div>
-                    </div>
-                        <div className="stat-change d-flex justify-content-center py-2"><span>
-                            <img src="./assets/image/4.svg" alt=""/>
-                             5.65%</span> from last month</div>
-                    
-                </div>
-                <div className="stat-card">
-                    <div className="stat-content d-flex justify-content-between">
-                        <div className="price-sec">
-                        <p className="stat-label">Invoices</p>
-                        <h3 className="stat-value">25,225,000</h3>
-                        </div>
-                        <div className="stat-icon orange">
-                           <img src="./assets/image/4.svg" alt=""/>
-                        </div>
-                    </div>
-                        <div className="stat-change d-flex justify-content-center py-2"><span>
-                            <img src="./assets/image/4.svg" alt=""/>
-                             5.65%</span> from last month</div>
-                    
-                </div>
-                <div className="stat-card">
-                    <div className="stat-content d-flex justify-content-between">
-                        <div className="price-sec">
-                        <p className="stat-label">Revenue</p>
-                        <h3 className="stat-value">200</h3>
-                        </div>
-                        <div className="stat-icon blue">
-                           <img src="./assets/image/4.svg" alt=""/>
-                        </div>
-                    </div>
-                    <div className="stat-change d-flex justify-content-center py-2">
-                        <span style={{color: "#1B8CCA"}}><img src="./assets/image/4.svg" alt=""/>7.45%</span> from last month
-                    </div>
-                </div>
+            <Link to="/Invoices">View all</Link>
+          </div>
+
+          <DocumentTable
+            loading={loadingInvoice}
+            rows={recentInvoices}
+            columns={[
+              {
+                key: 'invoiceNumber',
+                label: 'Number',
+                render: (invoice) => <strong>{invoice.invoiceNumber}</strong>,
+              },
+              {
+                key: 'client',
+                label: 'Client',
+                render: (invoice) => invoice?.quotation?.billedTo?.name || 'Unknown client',
+              },
+              {
+                key: 'amount',
+                label: 'Amount',
+                className: 'text-end',
+                render: (invoice) => formatMoney(invoice.totalAmount, invoice?.quotation?.currency),
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (invoice) => <StatusBadge status={invoice.status} />,
+              },
+            ]}
+            empty={<EmptyState title="No invoices yet" description="Issue the first invoice when a proforma or LPO is approved." />}
+          />
+        </section>
+
+        <section className="ops-panel">
+          <div className="ops-panel-header">
+            <div>
+              <h2>Automation Workflow</h2>
+              <p>Recommended operating model for every service module.</p>
             </div>
+          </div>
 
-            <div className="tables-row">
-                <div className="table-section">
-                    <div className="table-header">
-                        <h5 className="table-title">Recent Invoices</h5>
-                        <Link to="/Invoices" className="view-all">View All</Link>
-                    </div>
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Client</th>
-                                <th>Amount</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                invoices?.map((invoice,i)=>(
-                                    <tr key={i}>
-                                        <td>{invoice?.quotation?.billedTo?.name}</td>
-                                        <td className="amount">{Number(invoice.totalAmount).toLocaleString()} {invoice?.quotation?.currency}</td>
+          <WorkflowSteps
+            steps={[
+              { label: 'Capture', description: 'Create client, service, and commercial terms once.' },
+              { label: 'Review', description: 'Validate totals, tax, client details, and approvals.' },
+              { label: 'Issue', description: 'Reserve the official number only at final issue time.' },
+              { label: 'Track', description: 'Follow status, payment, and audit history from one place.' },
+            ]}
+          />
+        </section>
+      </div>
 
-                                        <td>{moment(invoice.dueDate).format('DD MMM YYYY')}</td>
-                                        <td>
-                                            <span className="status-badge">
-                                                {invoice.status}
-                                                {invoice.status === 'Paid' && <i className="bi bi-check-circle ms-1"></i>}
-                                                {invoice.status === 'Overdue' && <i className="bi bi-exclamation-triangle ms-1"></i>}
-                                                {invoice.status === 'Partially Paid' && <i className="bi bi-hourglass-split ms-1"></i>}
-                                                {invoice.status === 'Unpaid' && <i className="bi bi-clock ms-1"></i>}
-                                                {invoice.status === 'Draft' && <i className="bi bi-file-text ms-1"></i>}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="table-section">
-                    <div className="table-header">
-                        <h5 className="table-title">Recent Proforma</h5>
-                        <Link to="/Proforma" className="view-all">View All</Link>
-                    </div>
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Client</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {
-                                quotation?.map((q,i)=>(
-                                    <tr key={i}>
-                                        <td>{q?.billedTo?.name}</td>
-                                        <td className="amount">{q?.totalAmount} {q?.currency}</td>
-                                    </tr>
-                                ))
-                            }
-                            
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        </>
-  )
+      <div className="ops-metric-grid ops-secondary-grid">
+        <MetricCard
+          label="Proformas"
+          value={proformas.length}
+          helper="Commercial offers prepared"
+          icon="bi-file-earmark-text"
+          tone="dark"
+        />
+        <MetricCard
+          label="LPOs"
+          value={purchaseOrders.length}
+          helper="Purchase orders in the workspace"
+          icon="bi-file-earmark-check"
+          tone="primary"
+        />
+        <MetricCard
+          label="Latest invoice"
+          value={invoices[0]?.invoiceNumber || 'None'}
+          helper={invoices[0] ? `Issued ${formatDate(invoices[0].invoiceDate)}` : 'Waiting for first issue'}
+          icon="bi-clock-history"
+          tone="dark"
+        />
+      </div>
+    </div>
+  );
 }
 
-export default Home
+export default Home;

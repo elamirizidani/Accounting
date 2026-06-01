@@ -7,12 +7,44 @@ import { fetchData, insertData, updateData } from '../../../utility/api';
 import ClientFormModal from '../ReUsable/ClientFormModal';
 import AddService from '../ReUsable/AddService';
 import AddServiceCode from '../ReUsable/AddServiceCode';
+import RichTextEditor from '../ReUsable/RichTextEditor';
 
 import { useAuthStore } from '../../store/authStore';
 import { useServicesStore } from '../../store/servicesStore';
 
 
+const toDateInputValue = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+};
+
+const getRecordId = (value) => value?._id || value || '';
+
+const normalizeItemsForForm = (items = []) => items.map((item) => ({
+    ...item,
+    service: getRecordId(item.service),
+    code: getRecordId(item.code),
+    codeName: item.codeName || item.code?.code || '',
+}));
+
+const buildLpoFormData = (quotation = {}) => ({
+    ...quotation,
+    billedBy: getRecordId(quotation?.billedBy),
+    billedTo: getRecordId(quotation?.billedTo),
+    lpoDate: toDateInputValue(quotation?.lpoDate || quotation?.quotationDate || new Date()),
+    dueDate: toDateInputValue(quotation?.dueDate),
+    currency: quotation?.currency || 'RWF',
+    status: quotation?.status || 'draft',
+    termsConditions: quotation?.termsConditions || '',
+    items: normalizeItemsForForm(quotation?.items || []),
+    enableTax: quotation?.enableTax ?? true,
+    roundOffTotal: quotation?.roundOffTotal ?? true,
+});
+
 const AddLPO = ({ show, handleClose, quotation = {} }) => {
+    const isEditing = Boolean(quotation?._id);
     const { serviceCodes, getServiceCodes } = useServicesStore()
     const currencies = useMemo(() => [
         {
@@ -37,16 +69,17 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
         }
     ], [])
 
-    const [enableTax, setEnableTax] = useState(true);
-    const [addDueDate, setAddDueDate] = useState(false);
-    const [roundOffTotal, setRoundOffTotal] = useState(true);
-    const [items, setItems] = useState(quotation?.items || []);
+    const initialFormData = buildLpoFormData(quotation);
+    const [enableTax, setEnableTax] = useState(initialFormData.enableTax);
+    const [addDueDate, setAddDueDate] = useState(Boolean(initialFormData.dueDate));
+    const [roundOffTotal, setRoundOffTotal] = useState(initialFormData.roundOffTotal);
+    const [items, setItems] = useState(initialFormData.items);
     const [customers, setCustomers] = useState([])
     const [companies, setCompanies] = useState([])
     const [services, setServices] = useState([])
     const [selectedCustomer, setSelectedCustomer] = useState(quotation?.billedTo || {})
     const [selectedCompany, setSelectedCompany] = useState(quotation?.billedBy || {})
-    const [selectedCurrency, setSelectedCurrency] = useState(currencies?.find(currency => currency?.name === quotation?.currency) || {})
+    const [selectedCurrency, setSelectedCurrency] = useState(currencies?.find(currency => currency?.name === initialFormData.currency) || {})
 
     const [showClientForm, setShowClientForm] = useState(false);
     const [showServiceForm, setShowServiceForm] = useState(false);
@@ -65,17 +98,16 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
 
     useEffect(() => {
         if (quotation) {
-            setFormData({
-                ...quotation,
-                items: quotation?.items || [],
-                enableTax: quotation?.enableTax ?? true,
-                roundOffTotal: quotation?.roundOffTotal ?? true
-            });
-            setEnableTax(quotation?.enableTax)
-            setItems(quotation?.items || []);
+            const nextFormData = buildLpoFormData(quotation);
+
+            setFormData(nextFormData);
+            setEnableTax(nextFormData.enableTax)
+            setRoundOffTotal(nextFormData.roundOffTotal);
+            setAddDueDate(Boolean(nextFormData.dueDate));
+            setItems(nextFormData.items);
             setSelectedCustomer(quotation?.billedTo || {});
             setSelectedCompany(quotation?.billedBy || {});
-            setSelectedCurrency(currencies.find(currency => currency?.name === quotation?.currency || 'RWF') || {});
+            setSelectedCurrency(currencies.find(currency => currency?.name === nextFormData.currency) || {});
         }
     }, [quotation, currencies]);
 
@@ -94,12 +126,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
 
 
 
-    const [formData, setFormData] = useState({
-        ...quotation,
-        items: quotation?.items || [],
-        enableTax: quotation?.enableTax ?? true,
-        roundOffTotal: quotation?.roundOffTotal ?? true
-    })
+    const [formData, setFormData] = useState(initialFormData)
 
 
     const readCustomers = async () => {
@@ -107,7 +134,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
             const res = await fetchData('customers')
             setCustomers(res || [])
         } catch (error) {
-            console.log(error)
+            console.error('Failed to load customers:', error);
         }
     }
     const readCompanies = async () => {
@@ -115,7 +142,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
             const res = await fetchData('companies')
             setCompanies(res || [])
         } catch (error) {
-            console.log(error)
+            console.error('Failed to load companies:', error);
         }
     }
     const readServices = async () => {
@@ -123,7 +150,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
             const res = await fetchData('services')
             setServices(res || [])
         } catch (error) {
-            console.log(error)
+            console.error('Failed to load services:', error);
         }
     }
     useEffect(() => {
@@ -241,7 +268,8 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                 enableTax,
                 roundOffTotal,
                 totalAmount: total,
-                quotationDate: formData.quotationDate,
+                lpoDate: formData.lpoDate,
+                dueDate: formData.dueDate || undefined,
                 reference: 'REF-123456', // you can also get this from an input
                 notes: '', // can bind to form state if needed
             };
@@ -251,14 +279,14 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
             else
                 await insertData('lpo', payload);
 
-            alert('LPO created successfully!');
+            alert(`LPO ${isEditing ? 'updated' : 'created'} successfully!`);
             // console.log(response);
 
             // Optionally reset form or close modal
             loadLpos()
             handleClose();
         } catch (err) {
-            console.log(err)
+            console.error('Failed to save LPO:', err);
             setError(err.response?.data?.message || 'Failed to create quotation');
         } finally {
             setLoading(false);
@@ -370,7 +398,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                 <div className="quotation-modal">
                     <Form onSubmit={handleSubmit}>
                         <Modal.Header closeButton>
-                            <Modal.Title>New Local Purchase Order (LPO)</Modal.Title>
+                            <Modal.Title>{isEditing ? 'Edit Local Purchase Order (LPO)' : 'New Local Purchase Order (LPO)'}</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
                             <div className="container">
@@ -390,13 +418,13 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                 </div> */}
                                             <div className="col-md-12 mt-3">
                                                 <Form.Group>
-                                                    <Form.Label>Quotation Date</Form.Label>
+                                                    <Form.Label>LPO Date</Form.Label>
                                                     <div className="d-flex align-items-center">
                                                         <Form.Control type="date"
-                                                            value={formData.quotationDate}
+                                                            value={formData.lpoDate}
                                                             onChange={(e) => {
                                                                 const value = e.target.value;
-                                                                setFormData({ ...formData, quotationDate: value });
+                                                                setFormData({ ...formData, lpoDate: value });
                                                             }}
                                                         />
                                                     </div>
@@ -416,10 +444,10 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                                                 {
                                                     addDueDate && <div className="d-flex align-items-center">
                                                         <Form.Control type="date"
-                                                            value={formData.quotationDate}
+                                                            value={formData.dueDate}
                                                             onChange={(e) => {
                                                                 const value = e.target.value;
-                                                                setFormData({ ...formData, quotationDate: value });
+                                                                setFormData({ ...formData, dueDate: value });
                                                             }}
                                                         />
                                                     </div>
@@ -439,7 +467,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                                                                 setFormData({ ...formData, status: value });
                                                             }}
                                                         >
-                                                            <option>Select Status</option>
+                                                            <option value="">Select Status</option>
                                                             <option value="draft">Draft</option>
                                                             <option value="pending">Pending</option>
                                                             <option value="approved">Approved</option>
@@ -456,7 +484,9 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                                                             onChange={async (e) => {
                                                                 const value = e.target.value;
                                                                 const selectedOption = e.target.options[e.target.selectedIndex];
-                                                                const fullCurrency = JSON.parse(selectedOption.dataset.currency);
+                                                                const fullCurrency = selectedOption.dataset.currency
+                                                                    ? JSON.parse(selectedOption.dataset.currency)
+                                                                    : {};
                                                                 setSelectedCurrency(fullCurrency);
                                                                 setFormData({ ...formData, currency: value });
                                                             }}
@@ -500,15 +530,17 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                                                     <Form.Label>Billed By</Form.Label>
 
                                                     <Form.Select
+                                                        value={selectedCompany?._id || formData.billedBy || ''}
                                                         onChange={(e) => {
                                                             const selectedId = e.target.value;
                                                             if (selectedId && selectedId?.toLowerCase() !== "select") {
                                                                 const selected = companies.find(c => c._id === selectedId);
                                                                 setSelectedCompany(selected);
+                                                                setFormData({ ...formData, billedBy: selectedId });
                                                             }
                                                         }}
                                                     >
-                                                        <option>Select</option>
+                                                        <option value="">Select</option>
                                                         {companies?.map((company) => (
                                                             <option key={company._id} value={company._id}>
                                                                 {company.name}
@@ -539,7 +571,7 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
 
                                                         <Form.Select
                                                             className="me-2"
-                                                            value={formData.billedTo}
+                                                            value={selectedCustomer?._id || formData.billedTo || ''}
                                                             onChange={(e) => {
                                                                 const selectedId = e.target.value;
                                                                 if (selectedId && selectedId?.toLowerCase() !== "select") {
@@ -745,12 +777,10 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
                                         </div>
                                         <Form.Group>
                                             <Form.Label>Terms & Conditions</Form.Label>
-                                            <Form.Control as="textarea" rows={3} placeholder="Enter Terms & Conditions..."
+                                            <RichTextEditor
                                                 value={formData.termsConditions}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    setFormData({ ...formData, termsConditions: value });
-                                                }}
+                                                onChange={(value) => setFormData({ ...formData, termsConditions: value })}
+                                                placeholder="Example: This LPO is subject to approved delivery timelines and client acceptance."
                                             />
                                         </Form.Group>
                                     </div>
@@ -878,6 +908,3 @@ const AddLPO = ({ show, handleClose, quotation = {} }) => {
 
 
 export default AddLPO;
-
-
-

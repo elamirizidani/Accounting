@@ -8,14 +8,13 @@ export const useServicesStore = create((set, get) => ({
   getServiceCodes: async () => {
     try {
       const res = await fetchData("services/serviceCodes");
-      // console.log('ServiceCodes', res);
       set({
         loadingCodes: false,
-        serviceCodes: res
+        serviceCodes: res || []
       });
     } catch (error) {
-      console.log(error);
-      set({ loadingClients: false });
+      console.error('Failed to load service codes:', error);
+      set({ loadingCodes: false, serviceCodes: [] });
     }
   },
   

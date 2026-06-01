@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import barndMark from '../src/assets/imgs/brandmark.png'
 
 const usePDFGenerator = () => {
@@ -57,6 +55,11 @@ const usePDFGenerator = () => {
 
 
     try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
       // Default options
       const defaultOptions = {
         filename: 'document.pdf',

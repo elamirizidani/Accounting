@@ -8,14 +8,13 @@ export const useClientsStore = create((set, get) => ({
   getInvoices: async () => {
     try {
       const res = await fetchData("customers/withDetails");
-      console.log('Clients', res?.data);
       set({
         loadingClients: false,
-        clients: res?.data
+        clients: res?.data || []
       });
     } catch (error) {
-      console.log(error);
-      set({ loadingClients: false });
+      console.error('Failed to load clients:', error);
+      set({ loadingClients: false, clients: [] });
     }
   },
   

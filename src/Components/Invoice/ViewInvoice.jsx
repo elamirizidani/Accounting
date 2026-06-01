@@ -1,13 +1,13 @@
 import React from 'react';
 import { Modal, Button, Table, Row, Col, Card, Spinner } from 'react-bootstrap';
 import siteLogo from '../../assets/imgs/agencyLogo.png'
-import barndMark from '../../assets/imgs/brandmark.png'
 import moment from 'moment';
 import PDFDownloadButton from '../ReUsable/PDFDownloadButton';
+import { sanitizeHtml } from '../../utility/sanitizeHtml';
 
 const ViewInvoice = ({ show, handleClose, invoice }) => {
   const componentRef = React.useRef();
-console.log('invoice',invoice)
+  const invoiceTermsHtml = sanitizeHtml(invoice?.quotation?.termsConditions || invoice?.quotation?.termsAndConditions || '');
 
   function numberToWords(num) {
   if (num === 0) return "zero";
@@ -36,10 +36,6 @@ console.log('invoice',invoice)
   return res.trim();
 }
   
-const handlePDFSuccess = (result) => {
-    console.log('PDF generated successfully:', result.filename);
-  };
-
   const handlePDFError = (error) => {
     console.error('PDF generation failed:', error);
     alert('Failed to generate PDF. Please try again.');
@@ -63,7 +59,7 @@ const handlePDFSuccess = (result) => {
           return Array.from(styleSheet.cssRules)
             .map(rule => rule.cssText)
             .join('\n');
-        } catch (e) {
+        } catch {
           // Handle cross-origin stylesheets
           return '';
         }
@@ -283,10 +279,10 @@ const handlePDFSuccess = (result) => {
             </div>
 
             {/* Terms and Conditions */}
-            {invoice?.quotation?.termsAndConditions && (
+            {invoiceTermsHtml && (
               <div className="mt-4">
                 <h5 className="mb-2">Terms & Conditions</h5>
-                <div className="text-muted" dangerouslySetInnerHTML={{ __html: invoice?.quotation?.termsAndConditions }} />
+                <div className="text-muted document-rich-text" dangerouslySetInnerHTML={{ __html: invoiceTermsHtml }} />
               </div>
             )}
 
@@ -332,7 +328,6 @@ const handlePDFSuccess = (result) => {
           filename={`Invoice_${invoice?.invoiceNumber || 'Unknown'}_${invoice?.quotation?.billedTo?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'Customer'}.pdf`}
           buttonText="Download PDF"
           variant="primary"
-          onSuccess={handlePDFSuccess}
           onError={handlePDFError}
           pdfOptions={{
             scale: 2,

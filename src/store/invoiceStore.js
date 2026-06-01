@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { fetchData } from '../../utility/api';
 
-export const useInvoiceStore = create((set,get)=>({
+export const useInvoiceStore = create((set)=>({
     loadingInvoice:true,
     invoices:[],
     paidInvoice: null,
@@ -18,7 +18,6 @@ export const useInvoiceStore = create((set,get)=>({
     getInvoices:async()=>{
         try {
             const res = await fetchData("invoice");
-            console.log('invoice',res)
                 set({
                     loadingInvoice:false,
                     allInvoiceData:res,
@@ -34,7 +33,8 @@ export const useInvoiceStore = create((set,get)=>({
                     totalAmountExceptDraft:res.totalAmountExceptDraft
                 })
         } catch (error) {
-            console.log(error)
+            console.error('Failed to load invoices:', error);
+            set({ loadingInvoice: false, invoices: [] });
         }
     },
 }))

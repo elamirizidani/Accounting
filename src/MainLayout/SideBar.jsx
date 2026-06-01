@@ -12,11 +12,12 @@ const SideBar = () => {
   const [openMenus, setOpenMenus] = useState({});
   const menuItems = [
     { path: '/', icon: 'bi-speedometer2', label: 'Dashboard',isLink:true },
+    { path: '/Clients', icon: 'bi-people', label: 'Clients',isLink:true },
+    { path: '/Services', icon: 'bi-briefcase', label: 'Services',isLink:true },
     { path: '/Proforma', icon: 'bi-file-earmark-text', label: 'Proforma',isLink:true },
-    { path: '/Invoices', icon: 'bi-receipt', label: 'Invoices',isLink:true },
-    { path: '/Clients', icon: 'bi-receipt', label: 'Clients',isLink:true },
     { path: '/Lpo', icon: 'bi-file-earmark-break', label: 'LPO',isLink:true },
-    { path: '/Transactions', icon: 'bi-arrow-left-right', label: 'Transactions',isLink:true },
+    { path: '/Invoices', icon: 'bi-receipt', label: 'Invoices',isLink:true },
+    { path: '/Transactions', icon: 'bi-shield-check', label: 'Operations',isLink:true },
     { path: '/logout', icon: 'bi-door-closed', label: 'Logout',isLink:false,fnToCall:logout },
     // { path: '/', icon: 'bi-bar-chart', label: 'Reports',
     //     subMenu:[
@@ -112,7 +113,7 @@ const SideBar = () => {
     <div className="navbar-vertical-footer position-fixed">
       <button onClick={()=>changeShowMenuLabel()} className="btn navbar-vertical-toggle border-0 fw-semibold w-100 white-space-nowrap d-flex align-items-center">
         {
-          showMenuLabel ? <i class="bi bi-box-arrow-in-left"></i>:<i class="bi bi-box-arrow-in-right"></i>
+          showMenuLabel ? <i className="bi bi-box-arrow-in-left"></i>:<i className="bi bi-box-arrow-in-right"></i>
         }
       {
         showMenuLabel && <span className="navbar-vertical-footer-text ms-2">Collapsed View</span>
@@ -125,8 +126,6 @@ const SideBar = () => {
 };
 
 export default SideBar;
-
-
 
 
 

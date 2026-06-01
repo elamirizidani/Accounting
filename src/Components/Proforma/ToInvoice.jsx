@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Button, Form, Table,Spinner, Row, Col, Card } from 'react-bootstrap';
 import '../create.css'
@@ -45,10 +46,11 @@ const [invoiceData,setInvoiceData] =useState({
     invoiceDate:'',
     dueDate:'',
     paymentTerms:'',
-    paymentMethod:'',
-    notes:'',
-    status:'',
-    extraEmail:''
+	    paymentMethod:'',
+	    notes:'',
+	    status:'',
+    invoiceTrack:'structured',
+	    extraEmail:''
   })
 
   useEffect(() => {
@@ -69,8 +71,6 @@ const [invoiceData,setInvoiceData] =useState({
 }, [quotation,currencies]);
 
 
-  console.log('quotation to invoice',quotation)
-
   const [formData, setFormData] = useState({
     ...quotation,
     items: quotation?.items || [],
@@ -84,7 +84,7 @@ const [invoiceData,setInvoiceData] =useState({
           const res = await fetchData('customers')
           setCustomers(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load customers:', error);
         }
       }
       const readCompanies = async ()=>{
@@ -92,7 +92,7 @@ const [invoiceData,setInvoiceData] =useState({
           const res = await fetchData('companies')
           setCompanies(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load companies:', error);
         }
       }
       const readServices = async ()=>{
@@ -100,7 +100,7 @@ const [invoiceData,setInvoiceData] =useState({
           const res = await fetchData('services')
           setServices(res || [])
         } catch (error) {
-          console.log(error)
+          console.error('Failed to load services:', error);
         }
       }
       useEffect(()=>{
@@ -205,17 +205,14 @@ const [invoiceData,setInvoiceData] =useState({
       ...invoiceData,
     };
 
-    console.log(JSON.stringify(payload))
-
-    const response = await insertData('invoice',payload);
+    await insertData('invoice',payload);
     getInvoices()
     alert('Invoice created successfully!');
-    console.log(response);
 
     // Optionally reset form or close modal
     handleClose();
   } catch (err) {
-    console.log(err)
+    console.error('Failed to create invoice:', err);
     setError(err.response?.data?.message || 'Failed to create quotation');
   } finally {
     setLoading(false);
@@ -280,9 +277,23 @@ const [invoiceData,setInvoiceData] =useState({
 
               <Col md={4}>
                 <Row>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Select Status</Form.Label>
+	                  <Col md={6}>
+	                    <Form.Group>
+	                      <Form.Label>Numbering Track</Form.Label>
+	                      <Form.Select
+	                        value={invoiceData.invoiceTrack}
+	                        onChange={(e) => {
+	                            setInvoiceData({...invoiceData, invoiceTrack: e.target.value});
+	                          }}
+	                      >
+	                        <option value="structured">Structured</option>
+	                        <option value="unstructured">Unstructured</option>
+	                      </Form.Select>
+	                    </Form.Group>
+	                  </Col>
+	                  <Col md={6}>
+	                    <Form.Group>
+	                      <Form.Label>Select Status</Form.Label>
                       <Form.Select
                         value={invoiceData.status}
                         onChange={(e) => {
@@ -290,7 +301,7 @@ const [invoiceData,setInvoiceData] =useState({
                             setInvoiceData({...invoiceData, status: value});
                           }}
                       >
-                        <option>Select Status</option>
+	                        <option value="">Select Status</option>
                         <option value="draft">Draft</option>
                         <option value="unpaid">Unpaid</option>
                         <option value="paid">Paid</option>
@@ -310,7 +321,7 @@ const [invoiceData,setInvoiceData] =useState({
                             setInvoiceData({...invoiceData, paymentMethod: value});
                           }}
                       >
-                        <option>Select</option>
+	                        <option value="">Select</option>
                         <option value="cash">Cash</option>
                         <option value="cheque">Cheque</option>
                       </Form.Select>
@@ -657,6 +668,3 @@ const [invoiceData,setInvoiceData] =useState({
 
 
 export default ToInvoice;
-
-
-

@@ -10,8 +10,8 @@ export const useAuthStore = create((set, get) => ({
   isLoggedIn: false,
   userRole:null,
   loading:true,
-  quotation:null,
-  lpos:null,
+  quotation:[],
+  lpos:[],
   showMenuLabel:true,
 
 
@@ -38,11 +38,13 @@ export const useAuthStore = create((set, get) => ({
 
       } else {
         localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         set({ isLoggedIn: false, user: null,userRole:null, });
       }
     } catch (error) {
       console.error('Failed to auto-login:', error);
       localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       set({ isLoggedIn: false, user: null });
     }
   },
@@ -54,6 +56,7 @@ export const useAuthStore = create((set, get) => ({
 
     } catch (error) {
        console.error('Failed to Load Data:', error); 
+       set({quotation: []})
     }
   },
   loadLpos: async () =>{
@@ -64,17 +67,17 @@ export const useAuthStore = create((set, get) => ({
 
     } catch (error) {
        console.error('Failed to Load Data:', error); 
+       set({lpos: []})
     }
   },
   
   login: async (userData) => {
     try {
 
-      // console.log('userData',userData)
-        const response = await apiLogin(userData.email, userData.password);
-        // console.log('response on store',response)
+        const response = await apiLogin(userData.email, userData.password, {
+          rememberMe: Boolean(userData.rememberMe),
+        });
         if (response.token) {
-          localStorage.setItem('token', response.token);
           set({isLoggedIn:true})
           await get().checkAuth();
           return {
@@ -85,27 +88,29 @@ export const useAuthStore = create((set, get) => ({
         set({ isLoggedIn: false, user: null,userRole:null });
           return {
               role:null,
-              status:false
+              status:false,
+              message: response.message || 'Login failed. Please try again.'
           };
         }
     } catch (error) {
-        console.log('error',error);
         set({ isLoggedIn: false, user: null });
         return {
             role:null,
-            status:false
+            status:false,
+            message: error.message || 'Login failed. Please try again.'
         };
     }
   },
 
   logout: () => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     set({ isLoggedIn: false, user: null, });
   },
   
   initialize: async () => {
 
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
       set({ isLoggedIn: false, user: null,loading: false });
       return;
